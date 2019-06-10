@@ -21,13 +21,19 @@ Target DLL:      CMSIS_AGDI.dll V1.29.10.0
 Dialog DLL:      TCM.DLL V1.35.1.0
  
 <h2>Project:</h2>
-E:\RM2019\ENG51999\engineering\MDK-ARM\RM_FRTOS.uvprojx
+E:\RM2019\分区赛之后代码\ENG\MDK-ARM\RM_FRTOS.uvprojx
 Project File Date:  05/05/2019
 
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 6 (build 750)', folder: 'e:\Keil_v5\ARM\ARMCC\Bin'
 Build target 'RM_FRTOS'
-"RM_FRTOS\RM_FRTOS.axf" - 0 Error(s), 0 Warning(s).
+compiling lift_task.c...
+..\user\lift_task\lift_task.c(198): warning:  #550-D: variable "lift_time_delay"  was set but never used
+  	static uint32_t lift_time_delay = 0;
+..\user\lift_task\lift_task.c: 1 warning, 0 errors
+linking...
+Program Size: Code=17940 RO-data=516 RW-data=300 ZI-data=19772  
+"RM_FRTOS\RM_FRTOS.axf" - 0 Error(s), 1 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -50,7 +56,7 @@ Package Vendor: Keil
 <h2>Collection of Component Files used:</h2>
 
    * Component: ARM::CMSIS:CORE:5.1.1
-Build Time Elapsed:  00:00:01
+Build Time Elapsed:  00:00:02
 </pre>
 </body>
 </html>

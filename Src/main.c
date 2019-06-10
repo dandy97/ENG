@@ -42,7 +42,7 @@ void BSP_init(void)
 	//初始化舵机
 	TIM4_Init();
 	//初始化继电器输出引脚
-	Put_Out_Init();
+	//Put_Out_Init();
 	//初始化CAN1、2
 	CAN1_Init();
 	CAN2_Init();

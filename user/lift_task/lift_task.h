@@ -37,6 +37,14 @@ typedef enum
 	Lift_Auto      = 5 ,     //×Ô¶¯Ä£Ê½
 } lift_mode_e;
 
+typedef enum
+{
+	Init_MODE      = 0,      //³õÊ¼×´Ì¬
+  Rc_MODE			   = 1,      //Ò£¿Ø×´Ì¬
+	Key_MODE  		 = 2,      //¼üÅÌ×´Ì¬
+	Stop_MODE      = 3,      //Í£Ö¹×´Ì¬
+} lift_mode_t;
+
 typedef struct
 {
   const motor_measure_t *lift_motor_measure;

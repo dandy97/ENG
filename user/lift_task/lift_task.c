@@ -12,16 +12,17 @@
 #include "pid.h"
 #include "chassis_task.h"
 #include "lift_wheel.h"
-//#include "user_lib.h"
 
 // 车身正方向左边升降电机0-ID为7 右边升降电机1-ID为8
 
+//升降任务状态
+lift_mode_t lift_mode = Init_MODE;
 //登岛电机数据结构
 chassis_move_t lift_wheel;
 //升降电机数据结构体
 lift_move_t lift_move;
 
-//底盘任务空间剩余量s
+//底盘任务空间剩余量
 uint32_t lift_high_water;
 void lift_task(void *pvParameters)
 {
@@ -102,6 +103,31 @@ void lift_feedback_update(lift_move_t *lift_update)
 	//更新电机角度
 	lift_update->motor_lift[0].angle = lift_update->motor_lift[0].lift_motor_measure->angle;
 	lift_update->motor_lift[1].angle = lift_update->motor_lift[1].lift_motor_measure->angle;
+	
+	//更新升降任务状态
+	switch(lift_update->lift_RC->rc.s[0])
+	{
+		case 1:
+		{
+			lift_mode = Rc_MODE;
+			break;
+		}			
+		case 3:
+		{
+			lift_mode = Key_MODE;
+			break;
+		}
+		case 2:
+		{
+			lift_mode = Stop_MODE;
+			break;
+		}
+		default:
+		{
+			break;
+		}
+	}
+	
 }
 
 //升降模式选择

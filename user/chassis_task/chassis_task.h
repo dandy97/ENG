@@ -100,8 +100,11 @@ typedef struct
 	PidTypeDef motor_pos_pid[4];               //底盘电机位置pid
 	
 	int32_t  tof_h;                              //底盘后轮tof
+	uint32_t key_time;
 	float    vx;
+	float    vx_offset;
 	float    vy;
+	float    vy_offset;
 	float    vw;
 	float    vw_offset;
 	float    gimbal_y_offset;
@@ -110,8 +113,10 @@ typedef struct
 
 typedef enum
 {
-	RC_MODE = 0,
-	AUTO_MODE,
+	INIT_MODE = 0,
+	RC_MODE,
+	KEY_MODE,
+	STOP_MODE,
 } chassis_mode_e;
 
 extern chassis_move_t chassis_move;
@@ -128,4 +133,6 @@ void chassis_set_contorl(chassis_move_t *chassis_control);
 void chassis_rc_to_control_vector(float *vx_set, float *vy_set, chassis_move_t *chassis_move_rc_to_vector);
 //底盘控制PID计算
 void chassis_control_loop(chassis_move_t *chassis_control);
+//返回底盘任务状态
+uint8_t get_chassis_state(void);
 #endif

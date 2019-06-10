@@ -5,9 +5,9 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include "chassis_task.h"
+
 UART_HandleTypeDef huart2;
-//置1后遥控中断开始计时
-uint8_t start_chassis_task = 0;
 //遥控器控制变量
 static RC_ctrl_t rc_ctrl;
 //接收原始数据，为18个字节，给了36个字节长度，防止DMA传输越界
@@ -109,7 +109,7 @@ void SBUS_TO_RC(volatile const uint8_t *sbus_buf, RC_ctrl_t *rc_ctrl)
 			2     2		0     0
 				 3				 1
 													*/
-	if(start_chassis_task == 1)
+	if(get_chassis_state())
 	{
 		rc_ctrl->time = xTaskGetTickCountFromISR();
 	}

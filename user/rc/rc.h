@@ -2,8 +2,6 @@
 #define RC_H
 #include "stm32f4xx_hal.h"
 
-extern uint8_t start_chassis_task;
-
 extern UART_HandleTypeDef huart2;
 extern DMA_HandleTypeDef  UART2RxDMA_Handler;
 

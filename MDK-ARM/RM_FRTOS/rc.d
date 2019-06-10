@@ -47,3 +47,8 @@ rm_frtos\rc.o: ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F
 rm_frtos\rc.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h
 rm_frtos\rc.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
 rm_frtos\rc.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
+rm_frtos\rc.o: ..\user\chassis_task\chassis_task.h
+rm_frtos\rc.o: ..\user\tof\tof.h
+rm_frtos\rc.o: ..\user\can_receive\can_receive.h
+rm_frtos\rc.o: ..\user\can\can.h
+rm_frtos\rc.o: ..\user\pid\pid.h
