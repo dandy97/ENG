@@ -2,7 +2,7 @@
 #include "stm32f4xx_hal.h"
 
 //声明tof变量
-static tof_can_data_t tof_data;
+//static tof_can_data_t tof_data;
 //陀螺仪变量
 static gyro_info_t gyro_info;
 //声明电机变量
@@ -56,9 +56,13 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 				case 101:
 				{
 					static int16_t pitch_connt = 0;
-					static int16_t raw_pit = 0;
+					static int16_t raw_pit,raw_v_z = 0;
 					static float pitch_angle, last_pitch_angle = 0;
+					raw_v_z = Data[2]<<8 | Data[3];
 					raw_pit = Data[4]<<8 | Data[5];
+					
+					//陀螺仪原始数据是弧度，把弧度转换为角度
+					gyro_info.v_z = (float)raw_v_z * 0.057295f;
 					
 					//陀螺仪原始数据被乘了100倍
 					pitch_angle = (float)raw_pit/100;
@@ -81,10 +85,10 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 				}			
 				case 0x300:
 				{
-					if((Data[0]<<8 | Data[1]) < 1000)
-					tof_data.dis_r = Data[0]<<8 | Data[1];
-					if((Data[2]<<8 | Data[3]) < 1000)
-					tof_data.dis_l = Data[2]<<8 | Data[3];
+//					if((Data[0]<<8 | Data[1]) < 1000)
+//					tof_data.dis_r = Data[0]<<8 | Data[1];
+//					if((Data[2]<<8 | Data[3]) < 1000)
+//					tof_data.dis_l = Data[2]<<8 | Data[3];
 					break;
 				}
 				case 0x401:

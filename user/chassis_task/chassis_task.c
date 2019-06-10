@@ -41,8 +41,9 @@ void chassis_task(void *pvParameters)
 		chassis_control_loop(&chassis_move);
 		//射击任务控制循环
 		CAN_CMD_CHASSIS(chassis_move.motor_chassis[0].give_current, chassis_move.motor_chassis[1].give_current,	chassis_move.motor_chassis[2].give_current, chassis_move.motor_chassis[3].give_current);
+		//Ni_Ming(0xf1,chassis_move.gyro_data->v_z,0,0,0);
 		//底盘任务频率4ms	 
-		vTaskDelay(4);
+		vTaskDelay(2);
 		chassis_high_water = uxTaskGetStackHighWaterMark(NULL);
 	}
 }
@@ -55,7 +56,7 @@ void chassis_init(chassis_move_t *chassis_init)
 		return;
 	}
 	//底盘速度环PID值
-	const static float motor_speed_pid[3] = {500, 0, 0};
+	const static float motor_speed_pid[3] = {700, 0, 0};
 	//底盘位置环PID值
 	const static float motor_pos_pid[3] = {0, 0, 0};
 	
@@ -88,6 +89,10 @@ void chassis_init(chassis_move_t *chassis_init)
 		PID_Init(&chassis_init->motor_pos_pid[i], PID_POSITION, motor_pos_pid, 0, 0);
 	}
 	
+	//初始化Z轴PID
+	CHISSIS_PID_Init(&chassis_init->chassis_gryo_pid, 2000, 0, 12, 0, 0);//kp_out ki_out kp ki kd 20 60
+	CHISSIS_PID_Init(&chassis_init->chassis_acc_pid, 60, 0, 0.3, 0, 0);
+	
 	//底盘任务初始化完成时底盘陀螺仪的角度
 	chassis_init->gyro_angle_start = chassis_init->gyro_data->yaw;
 	
@@ -103,6 +108,7 @@ void chassis_feedback_update(chassis_move_t *chassis_update)
 	chassis_update->motor_chassis[1].speed = chassis_update->motor_chassis[1].chassis_motor_measure->filter_rate / 19.0f;
 	chassis_update->motor_chassis[2].speed = chassis_update->motor_chassis[2].chassis_motor_measure->filter_rate / 19.0f;
 	chassis_update->motor_chassis[3].speed = chassis_update->motor_chassis[3].chassis_motor_measure->filter_rate / 19.0f;
+	chassis_update->vw_mouse = chassis_update->chassis_RC->mouse.x;
 	chassis_update->tof_h = chassis_update->tof_measure->tof_h;
 	
 	//更新底盘状态
@@ -145,8 +151,8 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 		{
 			chassis_control->vx =  chassis_control->chassis_RC->rc.ch[1] * 60.0f/660.0f;
 			chassis_control->vy =  chassis_control->chassis_RC->rc.ch[0] * 60.0f/660.0f;
-			chassis_control->vw_offset += chassis_control->chassis_RC->rc.ch[2] * 30/660 *  0.02;
-			chassis_control->vw = (chassis_control->vw_offset - chassis_control->gyro_data->yaw + chassis_control->gyro_angle_start) * 2;
+			chassis_control->vw_offset += chassis_control->chassis_RC->rc.ch[2] * 50/660 *  0.02;
+			chassis_control->vw_set = chassis_control->vw_offset + chassis_control->gyro_angle_start;
 			break;
 		}			
 		case KEY_MODE://键盘模式
@@ -194,13 +200,17 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 			}
 			
 			//旋转
-			chassis_control->vw_offset += chassis_control->chassis_RC->mouse.x * 0.01;
-			chassis_control->vw = (chassis_control->vw_offset - chassis_control->gyro_data->yaw) * 2;	
+			if(chassis_control->vw_mouse >  30)chassis_control->vw_mouse = 30; 
+			if(chassis_control->vw_mouse < -30)chassis_control->vw_mouse = -30;			
+			chassis_control->vw_offset += chassis_control->vw_mouse * 0.015;
+			chassis_control->vw_set = chassis_control->vw_offset + chassis_control->gyro_angle_start;
 			break;
 		}
 		case STOP_MODE://停止模式
 		{
-			chassis_control->vx = chassis_control->vy = chassis_control->vw = 0;
+			chassis_control->vx = chassis_control->vy = 0;
+			chassis_control->vw_set = chassis_control->gyro_data->yaw;
+			chassis_control->gyro_angle_start = chassis_control->gyro_data->yaw;
 			break;
 		}
 		default:
@@ -209,11 +219,16 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 		}
 	}
 	
+	//Z轴角度PID计算
+	PID_Calc(&chassis_control->chassis_gryo_pid, chassis_control->gyro_data->yaw, chassis_control->vw_set);
+	//Z轴角速度PID计算
+	chassis_control->vw = PID_Calc(&chassis_control->chassis_acc_pid, -chassis_control->gyro_data->v_z, chassis_control->chassis_gryo_pid.out);
+	
 	//底盘速度设定
-	chassis_control->motor_chassis[0].speed_set = -(int16_t)chassis_control->vx + (int16_t)chassis_control->vy + (int16_t)chassis_control->vw;
-	chassis_control->motor_chassis[1].speed_set =  (int16_t)chassis_control->vx + (int16_t)chassis_control->vy + (int16_t)chassis_control->vw;
+	chassis_control->motor_chassis[0].speed_set = +(int16_t)chassis_control->vx - (int16_t)chassis_control->vy + (int16_t)chassis_control->vw;
+	chassis_control->motor_chassis[1].speed_set = +(int16_t)chassis_control->vx + (int16_t)chassis_control->vy + (int16_t)chassis_control->vw;
 	chassis_control->motor_chassis[2].speed_set = -(int16_t)chassis_control->vx - (int16_t)chassis_control->vy + (int16_t)chassis_control->vw;
-	chassis_control->motor_chassis[3].speed_set =  (int16_t)chassis_control->vx - (int16_t)chassis_control->vy + (int16_t)chassis_control->vw;
+	chassis_control->motor_chassis[3].speed_set = -(int16_t)chassis_control->vx + (int16_t)chassis_control->vy + (int16_t)chassis_control->vw;
 	//计算PID
 
 	PID_Calc(&chassis_control->motor_speed_pid[0], chassis_control->motor_chassis[0].speed, chassis_control->motor_chassis[0].speed_set);
@@ -232,4 +247,21 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 uint8_t get_chassis_state(void)
 {
 	return chassis_mode;
+}
+
+//底盘Z轴PID初始化
+void CHISSIS_PID_Init(PidTypeDef *pid, float maxout, float max_iout, float kp, float ki, float kd)
+{
+	if (pid == NULL)
+	{
+			return;
+	}
+	pid->Kp = kp;
+	pid->Ki = ki;
+	pid->Kd = kd;
+
+	pid->set = 0.0f;
+
+	pid->max_iout = max_iout;
+	pid->max_out = maxout;
 }

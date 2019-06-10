@@ -29,21 +29,19 @@
 
 typedef enum
 {
-	Lift_Stop      = 0,      //停止状态
-  Lift_Rc			   = 1,      //遥控状态
-	Lift_Key  		 = 2,      //键盘状态
-	Lift_Run       = 3,      //平时模式
-	Lift_Give      = 4,      //平时模式
-	Lift_Auto      = 5 ,     //自动模式
-} lift_mode_e;
-
-typedef enum
-{
 	Init_MODE      = 0,      //初始状态
   Rc_MODE			   = 1,      //遥控状态
 	Key_MODE  		 = 2,      //键盘状态
 	Stop_MODE      = 3,      //停止状态
-} lift_mode_t;
+} lift_mode_e;
+
+typedef enum
+{
+	PINCH_INIT = 0,					//初始状态
+	PINCH_RISE,							//升高
+	PINCH_GIVE,							//给弹
+}
+pinch_mode_e;
 
 typedef struct
 {
@@ -63,6 +61,7 @@ typedef struct
   PidTypeDef motor_speed_pid[2];             //升降电机速度pid
 	PidTypeDef motor_pos_pid[2];               //升降电机位置pid
 	lift_mode_e mode;
+	
 } lift_move_t;
 
 //升降任务
@@ -71,8 +70,6 @@ void lift_task(void *pvParameters);
 void lift_init(lift_move_t *lift_init);
 //升降数据更新
 void lift_feedback_update(lift_move_t *lift_update);
-//升降模式选择
-void lift_mode_switch(lift_move_t *lift_mode);
 //升降控制PID计算
 void lift_control_loop(lift_move_t *lift_control);
 #endif

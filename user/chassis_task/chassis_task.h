@@ -98,6 +98,8 @@ typedef struct
   Chassis_Motor_t motor_chassis[4];          //底盘电机数据
   PidTypeDef motor_speed_pid[4];             //底盘电机速度pid
 	PidTypeDef motor_pos_pid[4];               //底盘电机位置pid
+	PidTypeDef chassis_acc_pid;
+	PidTypeDef chassis_gryo_pid;
 	
 	int32_t  tof_h;                              //底盘后轮tof
 	uint32_t key_time;
@@ -105,8 +107,10 @@ typedef struct
 	float    vx_offset;
 	float    vy;
 	float    vy_offset;
+	int16_t  vw_mouse;
 	float    vw;
 	float    vw_offset;
+	float    vw_set;
 	float    gimbal_y_offset;
 	float    gyro_angle_start;                   //底盘任务初始化完成时底盘陀螺仪的角度
 } chassis_move_t;
@@ -135,4 +139,6 @@ void chassis_rc_to_control_vector(float *vx_set, float *vy_set, chassis_move_t *
 void chassis_control_loop(chassis_move_t *chassis_control);
 //返回底盘任务状态
 uint8_t get_chassis_state(void);
+//底盘Z轴PID初始化
+void CHISSIS_PID_Init(PidTypeDef *pid, float maxout, float max_iout, float kp, float ki, float kd);
 #endif
