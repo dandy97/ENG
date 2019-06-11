@@ -103,6 +103,7 @@ typedef struct
 	
 	int32_t  tof_h;                              //µ×ÅÌºóÂÖtof
 	uint32_t key_time;
+	uint32_t last_press_time;
 	float    vx;
 	float    vx_offset;
 	float    vy;

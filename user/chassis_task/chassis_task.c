@@ -83,12 +83,12 @@ void chassis_init(chassis_move_t *chassis_init)
 	}
 	
 	//初始化底盘位置环PID 
-	for (uint8_t i = 0; i < 4; i++)
+	for (uint8_t i= 0; i < 4; i++)
 	{
 		//pmax imax
 		PID_Init(&chassis_init->motor_pos_pid[i], PID_POSITION, motor_pos_pid, 0, 0);
 	}
-	
+	 
 	//初始化Z轴PID
 	CHISSIS_PID_Init(&chassis_init->chassis_gryo_pid, 2000, 0, 12, 0, 0);//kp_out ki_out kp ki kd 20 60
 	CHISSIS_PID_Init(&chassis_init->chassis_acc_pid, 60, 0, 0.3, 0, 0);
@@ -149,8 +149,8 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 	{
 		case RC_MODE://遥控模式
 		{
-			chassis_control->vx =  chassis_control->chassis_RC->rc.ch[1] * 60.0f/660.0f;
-			chassis_control->vy =  chassis_control->chassis_RC->rc.ch[0] * 60.0f/660.0f;
+			chassis_control->vx =  chassis_control->chassis_RC->rc.ch[0] * 60.0f/660.0f;
+			chassis_control->vy =  chassis_control->chassis_RC->rc.ch[1] * 60.0f/660.0f;
 			chassis_control->vw_offset += chassis_control->chassis_RC->rc.ch[2] * 50/660 *  0.02;
 			chassis_control->vw_set = chassis_control->vw_offset + chassis_control->gyro_angle_start;
 			break;
@@ -158,7 +158,12 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 		case KEY_MODE://键盘模式
 		{
 			chassis_control->key_time++;//4ms一次
-			if(chassis_control->chassis_RC->key.v & SHIFT)//shitf加速																
+			if(chassis_control->chassis_RC->rc.s[1] == 1)
+			{
+				chassis_control->vy_offset = 12;
+				chassis_control->vx_offset = 12;
+			}
+			else if(chassis_control->chassis_RC->key.v & SHIFT)//shitf加速																
 			{
 				chassis_control->vy_offset = 60;
 				chassis_control->vx_offset = 50;
@@ -196,14 +201,26 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 			else
 			{
 				chassis_control->vx = 0;
-				ramp_init(&LRSpeedRamp, 200);
+				ramp_init(&LRSpeedRamp, 400);
 			}
 			
 			//旋转
-			if(chassis_control->vw_mouse >  30)chassis_control->vw_mouse = 30; 
-			if(chassis_control->vw_mouse < -30)chassis_control->vw_mouse = -30;			
-			chassis_control->vw_offset += chassis_control->vw_mouse * 0.015;
-			chassis_control->vw_set = chassis_control->vw_offset + chassis_control->gyro_angle_start;
+			if(chassis_control->chassis_RC->rc.s[1] == 1)//取弹状态
+			{
+				chassis_control->vw_set = chassis_control->gyro_data->yaw;
+			}
+			else if((chassis_control->chassis_RC->key.v & CTRL) && (chassis_control->key_time - chassis_control->last_press_time >500))
+			{
+				chassis_control->key_time = chassis_control->last_press_time;
+				chassis_control->vw_offset += 180;
+			}
+			else //鼠标控制
+			{
+				if(chassis_control->vw_mouse >  30)chassis_control->vw_mouse = 30; 
+				if(chassis_control->vw_mouse < -30)chassis_control->vw_mouse = -30;			
+				chassis_control->vw_offset += chassis_control->vw_mouse * 0.015;
+				chassis_control->vw_set = chassis_control->vw_offset + chassis_control->gyro_angle_start;
+			}
 			break;
 		}
 		case STOP_MODE://停止模式

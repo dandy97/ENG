@@ -72,4 +72,6 @@ void lift_init(lift_move_t *lift_init);
 void lift_feedback_update(lift_move_t *lift_update);
 //升降控制PID计算
 void lift_control_loop(lift_move_t *lift_control);
+//返回取弹状态
+uint8_t get_pinch_state(void);
 #endif

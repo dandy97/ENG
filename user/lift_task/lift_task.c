@@ -132,6 +132,11 @@ void lift_feedback_update(lift_move_t *lift_update)
 			break;
 		}
 	}
+	
+	if(get_chassis_state() == STOP_MODE)
+	{
+		lift_mode = Stop_MODE;//停止模式
+	}
 }
 
 //取弹升降高度
@@ -245,5 +250,11 @@ void lift_control_loop(lift_move_t *lift_control)
 		lift_control->motor_lift[0].give_current = lift_control->motor_speed_pid[0].out;
 		lift_control->motor_lift[1].give_current = lift_control->motor_speed_pid[1].out;
 	}
+}
+
+//返回升降状态
+uint8_t get_pinch_state(void)
+{
+	return pinch_mode;
 }
 
