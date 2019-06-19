@@ -43,8 +43,9 @@ void lift_task(void *pvParameters)
 		lift_wheel_control_loop(&lift_wheel);
 		//发送电流值
 	  CAN_CMD_LIFT(lift_wheel.motor_chassis[0].give_current, lift_wheel.motor_chassis[1].give_current, lift_move.motor_lift[0].give_current, lift_move.motor_lift[1].give_current);
+		//Ni_Ming(0xf1,-lift_move.motor_lift[0].angle,lift_move.motor_lift[1].angle,-lift_move.motor_lift[0].angle_set,lift_move.motor_lift[1].angle_set);
 		//控制频率4ms
-		vTaskDelay(4);
+		vTaskDelay(8);
 		lift_high_water = uxTaskGetStackHighWaterMark(NULL);
 	}
 }
@@ -57,7 +58,7 @@ void lift_init(lift_move_t *lift_init)
 		return;
 	}
 	//升降速度环PID值
-	const static float lift_speed_pid[3] = {20, 1, 600};
+	const static float lift_speed_pid[3] = {20, 3, 200};
 	//升降位置环PID值
 	const static float lift_pos_pid[3] = {8, 0, 0};
 	
@@ -72,14 +73,14 @@ void lift_init(lift_move_t *lift_init)
 	for (uint8_t i = 0; i < 2; i++)
 	{
 		//outmax imax 7000
-		PID_Init(&lift_init->motor_speed_pid[i], PID_POSITION, lift_speed_pid, 7000, 3000);
+		PID_Init(&lift_init->motor_speed_pid[i], PID_POSITION, lift_speed_pid, 10000, 3000);
 	}
 	
 	//初始化底盘位置环PID 
 	for (uint8_t i = 0; i < 2; i++)
 	{
 		//outmax imax
-		PID_Init(&lift_init->motor_pos_pid[i], PID_POSITION, lift_pos_pid, 500, 0);
+		PID_Init(&lift_init->motor_pos_pid[i], PID_POSITION, lift_pos_pid, 1000, 0);
 	}
 	
 	//更新一下数据
@@ -208,39 +209,39 @@ void lift_control_loop(lift_move_t *lift_control)
 		lift_control->motor_lift[1].angle_set = 0;
 	}
 	//平时为了提高速度P较大，复位初始位置为了保护结构速度降慢P较小
-	if(lift_control->motor_lift[1].angle_set < 400)
-	{
-		lift_control->motor_pos_pid[0].Kp = lift_control->motor_pos_pid[1].Kp = 1;
-		//lift_control->motor_pos_pid[0].max_out = lift_control->motor_pos_pid[1].max_out = 100;
-	}
-	else
-	{
-		//lift_control->motor_pos_pid[0].max_out = lift_control->motor_pos_pid[1].max_out = 500;
-		lift_control->motor_pos_pid[0].Kp = lift_control->motor_pos_pid[1].Kp = 8;
-	}
+//	if(lift_control->motor_lift[1].angle_set < 400)
+//	{
+//		lift_control->motor_pos_pid[0].Kp = lift_control->motor_pos_pid[1].Kp = 5;
+//		lift_control->motor_speed_pid[0].max_out = lift_control->motor_speed_pid[1].max_out = 2000;
+//	}
+//	else
+//	{
+//		lift_control->motor_speed_pid[0].max_out = lift_control->motor_speed_pid[1].max_out = 7000;
+//		lift_control->motor_pos_pid[0].Kp = lift_control->motor_pos_pid[1].Kp = 8;
+//	}
 	
 	//计算PID
 	for(uint8_t i = 0; i < 2; i++)
 	{
 		//位置环
 		PID_Calc(&lift_control->motor_pos_pid[i], lift_control->motor_lift[i].angle, lift_control->motor_lift[i].angle_set);
-		//速度环  复位初始位置为了保护结构i变为0，i积分清零
-		if(lift_control->motor_lift[i].angle_set < 200)
-		{
-			lift_control->motor_speed_pid[i].Ki = 0;
-			lift_control->motor_speed_pid[i].Iout = 0;
-		}
-		else
-		{
-			lift_control->motor_speed_pid[i].Ki = 1;
-		}
+//		//速度环  复位初始位置为了保护结构i变为0，i积分清零
+//		if(lift_control->motor_lift[i].angle_set < 200)
+//		{
+//			lift_control->motor_speed_pid[i].Ki = 1;
+//			lift_control->motor_speed_pid[i].Iout = 0;
+//		}
+//		else
+//		{
+//			lift_control->motor_speed_pid[i].Ki = 1;
+//		}
 		PID_Calc(&lift_control->motor_speed_pid[i], lift_control->motor_lift[i].speed, lift_control->motor_pos_pid[i].out);
 	}
 	
 	if(lift_mode == Stop_MODE)
 	{
 		//速度环PID的i积分输出清0
-		lift_control->motor_speed_pid[0].Iout = lift_control->motor_speed_pid[1].Iout = 0;
+		//lift_control->motor_speed_pid[0].Iout = lift_control->motor_speed_pid[1].Iout = 0;
 		//赋值电流值
 		lift_control->motor_lift[0].give_current = lift_control->motor_lift[1].give_current = 0;
 	}

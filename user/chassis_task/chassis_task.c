@@ -186,7 +186,7 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 			else
 			{
 				chassis_control->vy =0;
-				ramp_init(&FBSpeedRamp, 200);
+				ramp_init(&FBSpeedRamp, 400);
 			}
 		
 			//A和D平移
@@ -211,7 +211,7 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 			}
 			else if((chassis_control->chassis_RC->key.v & CTRL) && (chassis_control->key_time - chassis_control->last_press_time >500))
 			{
-				chassis_control->key_time = chassis_control->last_press_time;
+				chassis_control->last_press_time = chassis_control->key_time;
 				chassis_control->vw_offset += 180;
 			}
 			else //鼠标控制
@@ -220,6 +220,18 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 				if(chassis_control->vw_mouse < -30)chassis_control->vw_mouse = -30;			
 				chassis_control->vw_offset += chassis_control->vw_mouse * 0.015;
 				chassis_control->vw_set = chassis_control->vw_offset + chassis_control->gyro_angle_start;
+			}
+			if((chassis_control->chassis_RC->key.v & Z) && (chassis_control->key_time - chassis_control->last_press_time >250))
+			{
+				chassis_control->last_press_time = chassis_control->key_time;
+				if(HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_1) == 0)
+				{
+					HAL_GPIO_WritePin(GPIOB,GPIO_PIN_1,GPIO_PIN_SET); 
+				}
+				else
+				{
+					HAL_GPIO_WritePin(GPIOB,GPIO_PIN_1,GPIO_PIN_RESET); 
+				}
 			}
 			break;
 		}
