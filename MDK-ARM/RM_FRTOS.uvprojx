@@ -647,11 +647,6 @@
               <FilePath>..\user\ramp\ramp.c</FilePath>
             </File>
             <File>
-              <FileName>lift_wheel.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\user\lift_wheel\lift_wheel.c</FilePath>
-            </File>
-            <File>
               <FileName>lift_task.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\user\lift_task\lift_task.c</FilePath>

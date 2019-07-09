@@ -46,7 +46,6 @@
 "rm_frtos\pid.o"
 "rm_frtos\chassis_task.o"
 "rm_frtos\ramp.o"
-"rm_frtos\lift_wheel.o"
 "rm_frtos\lift_task.o"
 --library_type=microlib --strict --scatter "RM_FRTOS\RM_FRTOS.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols

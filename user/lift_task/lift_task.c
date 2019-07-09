@@ -31,18 +31,14 @@ void lift_task(void *pvParameters)
   vTaskDelay(2000);
 	//升降初始化
 	lift_init(&lift_move);
-	//登岛电机初始化
-	lift_wheel_init(&lift_wheel);
 	while(1)
 	{
 		//升降数据更新
 		lift_feedback_update(&lift_move);
 		//升降控制PID计算
 		lift_control_loop(&lift_move);
-		//登岛轮
-		lift_wheel_control_loop(&lift_wheel);
 		//发送电流值
-	  CAN_CMD_LIFT(lift_wheel.motor_chassis[0].give_current, lift_wheel.motor_chassis[1].give_current, lift_move.motor_lift[0].give_current, lift_move.motor_lift[1].give_current);
+	 // CAN_CMD_LIFT(lift_wheel.motor_chassis[0].give_current, lift_wheel.motor_chassis[1].give_current, lift_move.motor_lift[0].give_current, lift_move.motor_lift[1].give_current);
 		//Ni_Ming(0xf1,-lift_move.motor_lift[0].angle,lift_move.motor_lift[1].angle,-lift_move.motor_lift[0].angle_set,lift_move.motor_lift[1].angle_set);
 		//控制频率4ms
 		vTaskDelay(8);
@@ -66,18 +62,19 @@ void lift_init(lift_move_t *lift_init)
 	lift_init->lift_RC = get_remote_control_point();
 	
 	//获取升降电机数据指针 
-	lift_init->motor_lift[0].lift_motor_measure = get_Motor_Measure_Point(6);
-	lift_init->motor_lift[1].lift_motor_measure = get_Motor_Measure_Point(7);
+	lift_init->motor_lift[0].lift_motor_measure = get_Lift_Motor_Measure_Point(0);
+	lift_init->motor_lift[1].lift_motor_measure = get_Lift_Motor_Measure_Point(1);
+	lift_init->motor_lift[2].lift_motor_measure = get_Lift_Motor_Measure_Point(2);
 
 	//初始化升降速度环PID 
-	for (uint8_t i = 0; i < 2; i++)
+	for (uint8_t i = 0; i < 3; i++)
 	{
 		//outmax imax 7000
 		PID_Init(&lift_init->motor_speed_pid[i], PID_POSITION, lift_speed_pid, 10000, 3000);
 	}
 	
 	//初始化底盘位置环PID 
-	for (uint8_t i = 0; i < 2; i++)
+	for (uint8_t i = 0; i < 3; i++)
 	{
 		//outmax imax
 		PID_Init(&lift_init->motor_pos_pid[i], PID_POSITION, lift_pos_pid, 1000, 0);
@@ -93,10 +90,12 @@ void lift_feedback_update(lift_move_t *lift_update)
 	//更新电机速度
 	lift_update->motor_lift[0].speed = lift_update->motor_lift[0].lift_motor_measure->filter_rate / 19.0f;
 	lift_update->motor_lift[1].speed = lift_update->motor_lift[1].lift_motor_measure->filter_rate / 19.0f;
+	lift_update->motor_lift[2].speed = lift_update->motor_lift[2].lift_motor_measure->filter_rate / 19.0f;
 	
 	//更新电机角度
 	lift_update->motor_lift[0].angle = lift_update->motor_lift[0].lift_motor_measure->angle;
 	lift_update->motor_lift[1].angle = lift_update->motor_lift[1].lift_motor_measure->angle;
+	lift_update->motor_lift[2].angle = lift_update->motor_lift[2].lift_motor_measure->angle;
 	
 	//更新升降任务状态
 	switch(lift_update->lift_RC->rc.s[0])

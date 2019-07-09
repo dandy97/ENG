@@ -74,6 +74,11 @@
 #define M3505_MOTOR_SPEED_PID_MAX_OUT MAX_MOTOR_CAN_CURRENT
 #define M3505_MOTOR_SPEED_PID_MAX_IOUT 2000.0f
 
+#define BOUNCE 					GPIOD,GPIO_PIN_7
+#define EXTEND_O				GPIOB,GPIO_PIN_3
+#define EXTEND_T				GPIOB,GPIO_PIN_8
+#define PINCH  					GPIOB,GPIO_PIN_9
+
 //1.0 in = 2.54 cm	
 //240DPI	每240点一英寸
 #define DPI_POINT_TO_CENTIMETER	(2.54f / 240.0f)
@@ -95,9 +100,9 @@ typedef struct
 	const tof_data_t *tof_measure;
   const RC_ctrl_t *chassis_RC;               //底盘使用的遥控器指针
 	const gyro_info_t *gyro_data;						   //陀螺仪数据
-  Chassis_Motor_t motor_chassis[4];          //底盘电机数据
-  PidTypeDef motor_speed_pid[4];             //底盘电机速度pid
-	PidTypeDef motor_pos_pid[4];               //底盘电机位置pid
+  Chassis_Motor_t motor_chassis[6];          //底盘电机数据
+  PidTypeDef motor_speed_pid[6];             //底盘电机速度pid
+	PidTypeDef motor_pos_pid[6];               //底盘电机位置pid
 	PidTypeDef chassis_acc_pid;
 	PidTypeDef chassis_gryo_pid;
 	
@@ -114,6 +119,7 @@ typedef struct
 	float    vw_set;
 	float    gimbal_y_offset;
 	float    gyro_angle_start;                   //底盘任务初始化完成时底盘陀螺仪的角度
+	float    yaw;
 } chassis_move_t;
 
 typedef enum
@@ -142,4 +148,8 @@ void chassis_control_loop(chassis_move_t *chassis_control);
 uint8_t get_chassis_state(void);
 //底盘Z轴PID初始化
 void CHISSIS_PID_Init(PidTypeDef *pid, float maxout, float max_iout, float kp, float ki, float kd);
+//返回心跳包
+uint8_t get_heartbeat_bag(uint32_t data);
+//IO口按键控制高低电平
+void Set_KEY_GPIO(uint16_t key, uint16_t key1, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint32_t time);
 #endif

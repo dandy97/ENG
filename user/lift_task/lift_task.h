@@ -57,9 +57,9 @@ typedef struct
 typedef struct
 {
   const RC_ctrl_t *lift_RC;               //底盘使用的遥控器指针
-  Lift_Motor_t motor_lift[2];          //底盘电机数据
-  PidTypeDef motor_speed_pid[2];             //升降电机速度pid
-	PidTypeDef motor_pos_pid[2];               //升降电机位置pid
+  Lift_Motor_t motor_lift[3];          //底盘电机数据
+  PidTypeDef motor_speed_pid[3];             //升降电机速度pid
+	PidTypeDef motor_pos_pid[3];               //升降电机位置pid
 	lift_mode_e mode;
 	
 } lift_move_t;
