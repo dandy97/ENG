@@ -42,7 +42,7 @@ void chassis_task(void *pvParameters)
 		chassis_control_loop(&chassis_move);
 		//射击任务控制循环
 		CAN_CMD_CHASSIS(chassis_move.motor_chassis[0].give_current, chassis_move.motor_chassis[1].give_current,	chassis_move.motor_chassis[2].give_current, chassis_move.motor_chassis[3].give_current);
-		Ni_Ming(0xf1,chassis_move.yaw,chassis_move.gyro_data->pit,chassis_move.gyro_data->yaw_cheap,0);
+		//Ni_Ming(0xf1,chassis_move.gyro_data->v_z,chassis_move.gyro_data->pit,chassis_move.gyro_data->yaw_cheap,0);
 		//底盘任务频率4ms	 
 		aaaa = HAL_GPIO_ReadPin(PINCH);
 		bbbb = HAL_GPIO_ReadPin(BOUNCE);
@@ -181,7 +181,8 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 		{
 			chassis_control->key_time++;//4ms一次
 			
-			/*********** 速度挡 *****************/
+			/**********************************************  速度挡*******************************************************************/
+			
 			if(chassis_control->chassis_RC->rc.s[1] == 1)
 			{
 				chassis_control->vy_offset = 12;
@@ -197,7 +198,9 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 				chassis_control->vy_offset = 50;
 				chassis_control->vx_offset = 40;
 			}
-			/*********** 速度挡 *****************/
+			/**********************************************  速度挡*******************************************************************/
+			
+	   	/**********************************************  移动  *******************************************************************/
 			
 			//W和S前进
 			if(chassis_control->chassis_RC->key.v & W)
@@ -247,8 +250,23 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 				chassis_control->vw_set = chassis_control->vw_offset + chassis_control->gyro_angle_start;
 			}
 			
-			Set_KEY_GPIO(chassis_control->chassis_RC->key.v, Z, BOUNCE, chassis_control->key_time);
+			/**********************************************  移动  *******************************************************************/
+			
+			/**********************************************气缸控制*******************************************************************/
+			
+			if(chassis_control->chassis_RC->rc.s[1] == 1)//取弹模式
+			{
+				
+			}
+			else
+			{
+				Set_KEY_GPIO(chassis_control->chassis_RC->key.v, Q, BOUNCE, chassis_control->key_time);//前登岛轮
+				Set_KEY_GPIO(chassis_control->chassis_RC->key.v, E, BOUNCE, chassis_control->key_time);//后登岛轮
+				Set_KEY_GPIO(chassis_control->chassis_RC->key.v, Z, BOUNCE, chassis_control->key_time);//拖车
+			}
+			
 			//printf("%d\r\n",chassis_control->chassis_RC->key.time);
+			/**********************************************气缸控制*******************************************************************/
 			break;
 		}
 		case STOP_MODE://停止模式

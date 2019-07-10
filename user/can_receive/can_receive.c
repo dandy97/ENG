@@ -90,22 +90,22 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 						pitch_angle = pitch_angle + 360;
 					}
 					
-//					//将角度改成连续的，不是360°变回0°
-//					if((pitch_angle - last_pitch_angle) > 330)
-//						pitch_connt--;
-//					else if((pitch_angle - last_pitch_angle) < -330)
-//						pitch_connt++;
-//					
-//					if((yaw_angle - last_yaw_angle) > 330)
-//						yaw_connt--;
-//					else if((yaw_angle - last_yaw_angle) < -330)
-//						yaw_connt++;
-//					
+					//将角度改成连续的，不是360°变回0°
+					if((pitch_angle - last_pitch_angle) > 330)
+						pitch_connt--;
+					else if((pitch_angle - last_pitch_angle) < -330)
+						pitch_connt++;
+					
+					if((yaw_angle - last_yaw_angle) > 330)
+						yaw_connt--;
+					else if((yaw_angle - last_yaw_angle) < -330)
+						yaw_connt++;
+					
 					gyro_info.pit = pitch_angle + pitch_connt * 360;
-//					last_pitch_angle = pitch_angle;
-//					
+					last_pitch_angle = pitch_angle;
+					
 					gyro_info.yaw_cheap = yaw_angle + yaw_connt * 360;
-//					last_yaw_angle = yaw_angle;
+					last_yaw_angle = yaw_angle;
 					break;
 				}			
 				case 0x300:
