@@ -42,7 +42,7 @@ void chassis_task(void *pvParameters)
 		chassis_control_loop(&chassis_move);
 		//射击任务控制循环
 		CAN_CMD_CHASSIS(chassis_move.motor_chassis[0].give_current, chassis_move.motor_chassis[1].give_current,	chassis_move.motor_chassis[2].give_current, chassis_move.motor_chassis[3].give_current);
-		//Ni_Ming(0xf1,chassis_move.gyro_data->v_z,chassis_move.gyro_data->pit,chassis_move.gyro_data->yaw_cheap,0);
+		Ni_Ming(0xf1,chassis_move.gyro_data->v_z,chassis_move.gyro_data->pit,chassis_move.gyro_data->yaw,0);
 		//底盘任务频率4ms	 
 		aaaa = HAL_GPIO_ReadPin(PINCH);
 		bbbb = HAL_GPIO_ReadPin(BOUNCE);
