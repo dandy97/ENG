@@ -74,14 +74,16 @@
 #define M3505_MOTOR_SPEED_PID_MAX_OUT MAX_MOTOR_CAN_CURRENT
 #define M3505_MOTOR_SPEED_PID_MAX_IOUT 2000.0f
 
-//取弹
-#define BOUNCE 					GPIOD,GPIO_PIN_7
-#define EXTEND_O				GPIOB,GPIO_PIN_3
-#define EXTEND_T				GPIOB,GPIO_PIN_8
-#define PINCH  					GPIOB,GPIO_PIN_9
-
-//登岛、弹舱、拖车 
-#define CLIMB_FOR       GPIOD,GPIO_PIN_7
+//上层继电器
+/*前轮
+	后轮
+	弹舱
+	拖车
+	*/
+#define CLIMB_FOR       GPIOB,GPIO_PIN_9
+#define CLIMB_BACK      GPIOD,GPIO_PIN_7
+#define OPEN_LID        GPIOB,GPIO_PIN_3
+#define TRAILER					GPIOB,GPIO_PIN_8
 
 //1.0 in = 2.54 cm	
 //240DPI	每240点一英寸

@@ -179,7 +179,7 @@ void lift_control_loop(lift_move_t *lift_control)
 		case Stop_MODE://Í£Ö¹×´Ì¬
 		{
 			//Éý½µÎ»ÖÃÊäÈë
-			lift_control->motor_lift[2].angle_set = lift_control->motor_lift[2].angle_set;
+			lift_control->motor_lift[2].angle_set = lift_control->motor_lift[2].angle;
 			break;
 		}
 		case Rc_MODE://Ò£¿ØÊÖ¸Ë×´Ì¬
@@ -252,7 +252,7 @@ void lift_control_loop(lift_move_t *lift_control)
 	if(lift_mode == Stop_MODE)
 	{
 		//¸³ÖµµçÁ÷Öµ
-		lift_control->motor_lift[0].give_current = lift_control->motor_lift[1].give_current = 0;
+		lift_control->motor_lift[0].give_current = lift_control->motor_lift[1].give_current  = lift_control->motor_lift[2].give_current = 0;
 	}
 	else
 	{

@@ -42,12 +42,12 @@ void chassis_task(void *pvParameters)
 		chassis_control_loop(&chassis_move);
 		//射击任务控制循环
 		CAN_CMD_CHASSIS(chassis_move.motor_chassis[0].give_current, chassis_move.motor_chassis[1].give_current,	chassis_move.motor_chassis[2].give_current, chassis_move.motor_chassis[3].give_current);
-		Ni_Ming(0xf1,chassis_move.gyro_data->v_z,chassis_move.gyro_data->pit,chassis_move.gyro_data->yaw,0);
+		//Ni_Ming(0xf1,chassis_move.gyro_data->v_z,chassis_move.gyro_data->pit,chassis_move.gyro_data->yaw,0);
 		//底盘任务频率4ms	 
-		aaaa = HAL_GPIO_ReadPin(PINCH);
-		bbbb = HAL_GPIO_ReadPin(BOUNCE);
-		cccc = HAL_GPIO_ReadPin(EXTEND_T);
-		dddd = HAL_GPIO_ReadPin(EXTEND_O);
+//		aaaa = HAL_GPIO_ReadPin(PINCH);
+//		bbbb = HAL_GPIO_ReadPin(BOUNCE);
+//		cccc = HAL_GPIO_ReadPin(EXTEND_T);
+//		dddd = HAL_GPIO_ReadPin(EXTEND_O);
 		if((send_lift_wheel++) % 4 == 0)
 		{
 			CAN_CMD_CHASSIS_LIFT(chassis_move.motor_chassis[4].give_current, chassis_move.motor_chassis[5].give_current,0,0);
@@ -256,13 +256,17 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 			
 			if(chassis_control->chassis_RC->rc.s[1] == 1)//取弹模式
 			{
-				
+				Set_KEY_GPIO(chassis_control->chassis_RC->key.v, F, OPEN_LID, chassis_control->key_time);//弹仓
+			}
+			else if(chassis_control->chassis_RC->rc.s[1] == 2)//给弹模式
+			{
+				Set_KEY_GPIO(chassis_control->chassis_RC->key.v, F, OPEN_LID, chassis_control->key_time);//弹仓
 			}
 			else
 			{
-				Set_KEY_GPIO(chassis_control->chassis_RC->key.v, Q, BOUNCE, chassis_control->key_time);//前登岛轮
-				Set_KEY_GPIO(chassis_control->chassis_RC->key.v, E, BOUNCE, chassis_control->key_time);//后登岛轮
-				Set_KEY_GPIO(chassis_control->chassis_RC->key.v, Z, BOUNCE, chassis_control->key_time);//拖车
+				Set_KEY_GPIO(chassis_control->chassis_RC->key.v, Q, CLIMB_FOR, chassis_control->key_time);//前登岛轮
+				Set_KEY_GPIO(chassis_control->chassis_RC->key.v, E, CLIMB_BACK, chassis_control->key_time);//后登岛轮
+				Set_KEY_GPIO(chassis_control->chassis_RC->key.v, Z, TRAILER, chassis_control->key_time);//拖车
 			}
 			
 			//printf("%d\r\n",chassis_control->chassis_RC->key.time);

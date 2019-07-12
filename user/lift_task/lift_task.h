@@ -7,6 +7,18 @@
 
 #define Pai 3.141592653589793f
 
+//上层继电器
+/*翻转
+	升
+	夹取
+	弹开
+	*/
+#define EXTEND				  GPIOE,GPIO_PIN_1
+#define PINCH  					GPIOE,GPIO_PIN_2
+#define FLIP            GPIOE,GPIO_PIN_3
+#define BOUNCE 					GPIOE,GPIO_PIN_4
+
+
 /**********************************************************************************
  * bit      :15   14   13   12   11   10   9   8   7   6     5     4   3   2   1
  * keyboard : V    C    X	  Z    G    F    R   E   Q  CTRL  SHIFT  D   A   S   W

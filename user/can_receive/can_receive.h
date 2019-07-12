@@ -49,6 +49,7 @@ typedef struct
 	float v_z;
 	float pit;
 	float yaw;
+	float last_yaw;
 	float yaw_cheap;
 } gyro_info_t;
 

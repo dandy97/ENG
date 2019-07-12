@@ -78,7 +78,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 					raw_pit = Data[4]<<8 | Data[5];
 					
 					//陀螺仪原始数据是弧度，把弧度转换为角度
-					gyro_info.v_z = (float)raw_v_z * 0.057295f;
+					//gyro_info.v_z = (float)raw_v_z * 0.057295f;
 					
 					//陀螺仪原始数据被乘了100倍
 					pitch_angle = (float)raw_pit/100;
@@ -119,7 +119,9 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 				case 0x401:
 				{
 					gyro_heartbeat++;
+					gyro_info.last_yaw = gyro_info.yaw;
 					gyro_info.yaw = -0.01f*((int32_t)(Data[0]<<24)|(int32_t)(Data[1]<<16) | (int32_t)(Data[2]<<8) | (int32_t)(Data[3]))*0.8571428571f; 
+					gyro_info.v_z = gyro_info.yaw - gyro_info.last_yaw;
 					break;
 				}
 				default:
