@@ -8,7 +8,7 @@
 #define Pai 3.141592653589793f
 
 //上层继电器
-/*升
+/*伸
 	夹取
 	翻转
 	弹开
@@ -52,10 +52,11 @@ typedef enum
 {
 	Init_MODE      = 0,      //初始状态
 	Ready_MODE     = 1,			 //准备模式
-	Start_MODE     = 2,      //开始模式
-  Rc_MODE			   = 3,      //遥控状态
-	Key_MODE  		 = 4,      //键盘状态
-	Stop_MODE      = 5,      //停止状态
+	Reset_MODE     = 2,			 //复位模式
+	Start_MODE     = 3,      //开始模式
+  Rc_MODE			   = 4,      //遥控状态
+	Key_MODE  		 = 5,      //键盘状态
+	Stop_MODE      = 6,      //停止状态
 } lift_mode_e;
 
 typedef enum
@@ -104,4 +105,6 @@ void lift_control_loop(lift_move_t *lift_control);
 uint8_t get_pinch_state(void);
 //取弹按键
 void Set_LIFT_KEY_GPIO(uint16_t key, uint16_t key1, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint32_t time);
+//鼠标控制气缸
+void contrl_cylinder(uint8_t key, uint8_t key1, uint32_t time);
 #endif

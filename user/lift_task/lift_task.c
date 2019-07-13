@@ -19,6 +19,7 @@
 lift_mode_e lift_mode = Init_MODE;
 lift_mode_e last_lift_mode = Init_MODE;
 pinch_mode_e pinch_mode = PINCH_INIT;
+pinch_mode_e last_pinch_mode = PINCH_INIT;
 //登岛电机数据结构
 chassis_move_t lift_wheel;
 //升降电机数据结构体
@@ -40,8 +41,8 @@ void lift_task(void *pvParameters)
 		lift_control_loop(&lift_move);
 		//发送电流值
 		CAN_CMD_LIFT(lift_move.motor_lift[0].give_current, lift_move.motor_lift[1].give_current, lift_move.motor_lift[2].give_current, 0);
-		//Ni_Ming(0xf1,lift_move.motor_lift[0].angle ,lift_move.motor_lift[1].angle, 0, 0);
-		//printf("%d\r\n",lift_mode);
+		//Ni_Ming(0xf1,lift_move.motor_lift[0].angle ,lift_move.motor_lift[1].angle_set, 0, 0);
+		//printf("%d\r\n",HAL_GPIO_ReadPin(EXTEND)<<3 | HAL_GPIO_ReadPin(PINCH)<<2 | HAL_GPIO_ReadPin(FLIP)<<1 | HAL_GPIO_ReadPin(BOUNCE));
 		//控制频率4ms
 		vTaskDelay(4);
 		lift_high_water = uxTaskGetStackHighWaterMark(NULL);
@@ -124,38 +125,40 @@ void lift_feedback_update(lift_move_t *lift_update)
 		}
 	}
 	//准备过程
-	if(lift_mode == Ready_MODE)
+	if(lift_mode == Ready_MODE || lift_mode == Reset_MODE)
 	{
-		if(lift_update->motor_lift[2].angle > 29)
+		if(lift_update->motor_lift[2].angle > 29 && lift_update->motor_lift[2].angle < 40)
 		{
 			lift_mode = Start_MODE;
 		}
 	}
 	//开始模式
-	if(lift_mode == Start_MODE)
+	if(lift_mode != Ready_MODE && lift_mode != Init_MODE && lift_mode != Reset_MODE)
 	{
 		//更新升降任务状态
 		switch(lift_update->lift_RC->rc.s[0])
 		{
 			case 1:
 			{
-				lift_mode = Rc_MODE;//遥控模式
+				if(last_lift_mode == Key_MODE)
+				{
+					lift_mode = Reset_MODE;//复位模式
+				}
+				else
+				{
+					lift_mode = Rc_MODE;//遥控模式
+				}
 				break;
 			}			
 			case 3:
 			{
-				lift_mode = Key_MODE;//键盘模式
-				if(lift_update->lift_RC->rc.s[1] == 1)
+				if(last_lift_mode == Rc_MODE)
 				{
-					pinch_mode = PINCH_RISE;
+					lift_mode = Reset_MODE;//复位模式
 				}
-				else if(lift_update->lift_RC->rc.s[1] == 3)
+				else
 				{
-					pinch_mode = PINCH_INIT;
-				}
-				else if(lift_update->lift_RC->rc.s[1] == 2)
-				{
-					pinch_mode = PINCH_GIVE;
+					lift_mode = Key_MODE;//键盘模式
 				}
 				break;
 			}
@@ -171,6 +174,33 @@ void lift_feedback_update(lift_move_t *lift_update)
 		}
 	}
 	
+	static uint8_t pretect_lift = 0;
+	//取弹状态机
+	if(lift_update->lift_RC->rc.s[0] == 3)
+	{
+			if(lift_update->lift_RC->rc.s[1] == 1)
+			{
+				pretect_lift = 1;
+				pinch_mode = PINCH_RISE;
+			}
+			else if(lift_update->lift_RC->rc.s[1] == 3)
+			{
+				if(pretect_lift == 1)
+				{
+					lift_mode = Reset_MODE;//复位模式
+					pretect_lift = 0;
+				}
+				pinch_mode = PINCH_INIT;
+			}
+			else if(lift_update->lift_RC->rc.s[1] == 2)
+			{
+				pinch_mode = PINCH_GIVE;
+			}
+	}
+	else
+	{
+			pinch_mode = PINCH_INIT;
+	}
 	//遥控信号失去后为停止模式
 	if(get_chassis_state() == STOP_MODE)
 	{
@@ -181,7 +211,7 @@ void lift_feedback_update(lift_move_t *lift_update)
 		lift_mode = Init_MODE;
 	}
 	last_lift_mode = lift_mode;//上一次升降状态
-	
+	last_pinch_mode = pinch_mode;//上一次取弹状态
 	//更新电机速度
 	lift_update->motor_lift[0].speed = lift_update->motor_lift[0].lift_motor_measure->filter_rate / 19.0f;
 	lift_update->motor_lift[1].speed = lift_update->motor_lift[1].lift_motor_measure->filter_rate / 19.0f;
@@ -193,20 +223,27 @@ void lift_feedback_update(lift_move_t *lift_update)
 	lift_update->motor_lift[2].angle = lift_update->motor_lift[2].lift_motor_measure->angle * Pai * 3.0f / 360.0f - lift_update->translation_cail;
 }
 
+
 //升降控制PID计算
 void lift_control_loop(lift_move_t *lift_control)
 {	
+	lift_control->key_time++;
 	/**********************************************气缸控制*******************************************************************/
 	switch(pinch_mode)
 	{
 		case PINCH_INIT://初始状态
 		{
-			
+			HAL_GPIO_WritePin(FLIP,GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(PINCH,GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(BOUNCE,GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(EXTEND,GPIO_PIN_RESET);
 			break;
 		}			
 		case PINCH_RISE://取弹状态
 		{
 			
+			Set_LIFT_KEY_GPIO(lift_control->lift_RC->key.v, C, EXTEND, lift_control->key_time);//控制伸缩气缸
+			contrl_cylinder(lift_control->lift_RC->mouse.press_l, lift_control->lift_RC->mouse.press_r, lift_control->key_time);//鼠标控制取弹
 			break;
 		}
 		case PINCH_GIVE://给弹状态
@@ -220,7 +257,6 @@ void lift_control_loop(lift_move_t *lift_control)
 		}
 	}
 	/**********************************************气缸控制*******************************************************************/
-	
 	/**********************************************电机控制*******************************************************************/
 	switch(lift_mode)
 	{
@@ -241,6 +277,11 @@ void lift_control_loop(lift_move_t *lift_control)
 			lift_control->motor_lift[2].angle_set = -35.5f;
 			break;
 		}
+		case Reset_MODE://复位模式
+		{
+			lift_control->motor_lift[2].angle_set = -35.5f;
+			break;
+		}
 		case Rc_MODE://遥控手杆状态
 		{
 			//升降位置输入
@@ -250,24 +291,36 @@ void lift_control_loop(lift_move_t *lift_control)
 		}
 		case Key_MODE://键盘模式
 		{
-				switch(pinch_mode)
+				switch(lift_control->lift_RC->rc.s[1])
 				{
-					case PINCH_INIT://初始状态
+					case 1://初始状态
+					{
+						//升降位置输入
+						lift_control->motor_lift[0].angle_set = 12.0f;
+						if(lift_control->motor_lift[0].angle > -10.5f && lift_control->motor_lift[0].angle < -9.0f)
+						{
+							lift_control->motor_lift[2].angle_set = -60.0f;
+						}
+						if(lift_control->lift_RC->key.v == Q)//左移
+						{
+							lift_control->motor_lift[2].angle_set -= 0.1f;
+						}
+						if(lift_control->lift_RC->key.v == E)//右移
+						{
+							lift_control->motor_lift[2].angle_set += 0.1f;
+						}
+						break;
+					}
+					case 3://升高
 					{
 						//升降位置输入
 						lift_control->motor_lift[0].angle_set = 1.0f;
 						break;
 					}
-					case PINCH_RISE://升高
+					case 2://给弹模式
 					{
 						//升降位置输入
-						lift_control->motor_lift[0].angle_set = 10.0f;
-						break;
-					}
-					case PINCH_GIVE://给弹模式
-					{
-						//升降位置输入
-						lift_control->motor_lift[0].angle_set = 12.0f;	
+						lift_control->motor_lift[0].angle_set = 14.0f;	
 						break;
 					}
 					default:
@@ -275,7 +328,6 @@ void lift_control_loop(lift_move_t *lift_control)
 						break; 
 					}
 				}
-				lift_control->motor_lift[2].angle_set += lift_control->lift_RC->rc.ch[2] * 0.0005f;//-35
 			break;
 		}
 		default:
@@ -285,9 +337,9 @@ void lift_control_loop(lift_move_t *lift_control)
 	}
 	
 	//升降高度限幅(2cm ~ 15cm)
-	if(lift_control->motor_lift[0].angle_set > 15.0f)
+	if(lift_control->motor_lift[0].angle_set > 17.0f)
 	{
-		lift_control->motor_lift[0].angle_set = 15.0;
+		lift_control->motor_lift[0].angle_set = 17.0;
 	}
 	else if(lift_control->motor_lift[0].angle_set < 1.01f)
 	{
@@ -355,7 +407,7 @@ uint8_t get_pinch_state(void)
 void Set_LIFT_KEY_GPIO(uint16_t key, uint16_t key1, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint32_t time)
 {
 	static uint32_t lift_last_time = 0;
-	if((key & key1) && (time - lift_last_time >250))
+	if((key & key1) && (time - lift_last_time >125))
 	{
 		lift_last_time = time;
 		if(HAL_GPIO_ReadPin(GPIOx,GPIO_Pin) == 0)
@@ -366,5 +418,67 @@ void Set_LIFT_KEY_GPIO(uint16_t key, uint16_t key1, GPIO_TypeDef* GPIOx, uint16_
 		{
 			HAL_GPIO_WritePin(GPIOx,GPIO_Pin,GPIO_PIN_RESET); 
 		}
+	}
+}
+
+
+//鼠标控制气缸
+void contrl_cylinder(uint8_t key, uint8_t key1, uint32_t time)
+{
+	static uint32_t pinch_last_time = 0;
+	static int8_t cylinder_state = 0;
+	if(key && (time - pinch_last_time >125))//左击
+	{
+		pinch_last_time = time;
+		cylinder_state++;
+		if(cylinder_state > 5)
+		{
+			cylinder_state = 0;
+		}
+	}
+	if(key1 && (time - pinch_last_time >125))//右击
+	{
+		pinch_last_time = time;
+		cylinder_state--;
+		if(cylinder_state < 0)
+		{
+			cylinder_state = 0;
+		}
+	}
+	if(cylinder_state == 0)//初始
+	{
+		HAL_GPIO_WritePin(FLIP,GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(PINCH,GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(BOUNCE,GPIO_PIN_RESET);
+	}
+	if(cylinder_state == 1)//翻
+	{
+		HAL_GPIO_WritePin(FLIP,GPIO_PIN_SET);
+		HAL_GPIO_WritePin(PINCH,GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(BOUNCE,GPIO_PIN_RESET);
+	}
+	if(cylinder_state == 2)//翻->夹
+	{
+		HAL_GPIO_WritePin(FLIP,GPIO_PIN_SET);
+		HAL_GPIO_WritePin(PINCH,GPIO_PIN_SET);
+		HAL_GPIO_WritePin(BOUNCE,GPIO_PIN_RESET);
+	}
+	if(cylinder_state == 3)//翻->夹->翻
+	{
+		HAL_GPIO_WritePin(FLIP,GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(PINCH,GPIO_PIN_SET);
+		HAL_GPIO_WritePin(BOUNCE,GPIO_PIN_RESET);
+	}
+	if(cylinder_state == 4)//翻->夹->翻->松
+	{
+		HAL_GPIO_WritePin(FLIP,GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(PINCH,GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(BOUNCE,GPIO_PIN_RESET);
+	}
+	if(cylinder_state == 5)//翻->夹->翻->松->弹开
+	{
+		HAL_GPIO_WritePin(FLIP,GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(PINCH,GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(BOUNCE,GPIO_PIN_SET);
 	}
 }
