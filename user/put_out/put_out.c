@@ -6,7 +6,7 @@ void Put_Out_Init(void)
 	/*88-PD7  89-PB3  95-PB8  96-PB9 */
 	/*41-PE10 42-PE11 43-PE12 44-PE13*/
 	/*1 -PE2  2 -PE3  3 -PE4  98-PE1 */
-	/*97-PE0  93-PB7                 */
+	/*93-PB7  97-PE0                 */
 	/*17-PC2  18-PC3  25-PA2  26-PA3 */
 	GPIO_InitTypeDef GPIO_Initure;
 	__HAL_RCC_GPIOA_CLK_ENABLE();
@@ -52,6 +52,13 @@ void Put_Out_Init(void)
 	GPIO_Initure.Pull = GPIO_PULLDOWN;          
 	GPIO_Initure.Speed = GPIO_SPEED_HIGH;     
 	HAL_GPIO_Init(GPIOA,&GPIO_Initure);
+	
+	//上层限位开关
+	GPIO_Initure.Pin = GPIO_PIN_0; 
+	GPIO_Initure.Mode = GPIO_MODE_INPUT;  
+	GPIO_Initure.Pull = GPIO_PULLDOWN;          
+	GPIO_Initure.Speed = GPIO_SPEED_HIGH;     
+	HAL_GPIO_Init(GPIOE,&GPIO_Initure);
 	
 	//下层磁性开关 PE10、PE11、PE12、PE13
 	GPIO_Initure.Pin = GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13; 

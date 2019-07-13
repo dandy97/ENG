@@ -47,7 +47,7 @@ void chassis_task(void *pvParameters)
 //		aaaa = HAL_GPIO_ReadPin(PINCH);
 //		bbbb = HAL_GPIO_ReadPin(BOUNCE);
 //		cccc = HAL_GPIO_ReadPin(EXTEND_T);
-//		dddd = HAL_GPIO_ReadPin(EXTEND_O);
+//		dddd = HAL_GPIO_ReadPin(GPIOE,GPIO_PIN_0);
 		if((send_lift_wheel++) % 4 == 0)
 		{
 			CAN_CMD_CHASSIS_LIFT(chassis_move.motor_chassis[4].give_current, chassis_move.motor_chassis[5].give_current,0,0);

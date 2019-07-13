@@ -40,7 +40,8 @@ void lift_task(void *pvParameters)
 		lift_control_loop(&lift_move);
 		//发送电流值
 		CAN_CMD_LIFT(lift_move.motor_lift[0].give_current, lift_move.motor_lift[1].give_current, lift_move.motor_lift[2].give_current, 0);
-		//Ni_Ming(0xf1,lift_move.motor_lift[2].angle_set ,lift_move.motor_lift[2].give_current, -lift_move.motor_lift[2].angle, 0);
+		//Ni_Ming(0xf1,lift_move.motor_lift[0].angle ,lift_move.motor_lift[1].angle, 0, 0);
+		//printf("%d\r\n",lift_mode);
 		//控制频率4ms
 		vTaskDelay(4);
 		lift_high_water = uxTaskGetStackHighWaterMark(NULL);
@@ -98,28 +99,40 @@ void lift_init(lift_move_t *lift_init)
 static uint32_t init_time = 0;
 //升降数据更新
 void lift_feedback_update(lift_move_t *lift_update)
-{
-	//更新电机速度
-	lift_update->motor_lift[0].speed = lift_update->motor_lift[0].lift_motor_measure->filter_rate / 19.0f;
-	lift_update->motor_lift[1].speed = lift_update->motor_lift[1].lift_motor_measure->filter_rate / 19.0f;
-	lift_update->motor_lift[2].speed = lift_update->motor_lift[2].lift_motor_measure->filter_rate / 19.0f;
-	
-	//更新电机角度
-	lift_update->motor_lift[0].angle = lift_update->motor_lift[0].lift_motor_measure->angle * Pai * 3.0f / 360.0f;//(0~15cm)
-	lift_update->motor_lift[1].angle = lift_update->motor_lift[1].lift_motor_measure->angle * Pai * 3.0f / 360.0f;
-	lift_update->motor_lift[2].angle = lift_update->motor_lift[2].lift_motor_measure->angle * Pai * 3.0f / 360.0f;
-	
+{	
 	//初始化过程
 	if(lift_mode == Init_MODE)
 	{
 		init_time++;
 		if(init_time > 1250)
 		{
-			lift_mode = Rc_MODE;
 			init_time = 0;
+			lift_mode = Ready_MODE;
+			lift_update->lift_right_cail  = lift_update->motor_lift[0].lift_motor_measure->angle * Pai * 3.0f / 360.0f;
+			lift_update->lift_left_cail   = lift_update->motor_lift[1].lift_motor_measure->angle * Pai * 3.0f / 360.0f;
+			lift_update->translation_cail = lift_update->motor_lift[2].lift_motor_measure->angle * Pai * 3.0f / 360.0f;
+			lift_update->motor_lift[2].angle = lift_update->motor_lift[2].lift_motor_measure->angle * Pai * 3.0f / 360.0f - lift_update->translation_cail;
+		}
+		if(HAL_GPIO_ReadPin(Limit_Switch) == 0)
+		{
+			init_time = 0;
+			lift_mode = Ready_MODE;
+			lift_update->lift_right_cail  = lift_update->motor_lift[0].lift_motor_measure->angle * Pai * 3.0f / 360.0f;
+			lift_update->lift_left_cail   = lift_update->motor_lift[1].lift_motor_measure->angle * Pai * 3.0f / 360.0f;
+			lift_update->translation_cail = lift_update->motor_lift[2].lift_motor_measure->angle * Pai * 3.0f / 360.0f;
+			lift_update->motor_lift[2].angle = lift_update->motor_lift[2].lift_motor_measure->angle * Pai * 3.0f / 360.0f - lift_update->translation_cail;
 		}
 	}
-	if(lift_mode != Init_MODE)
+	//准备过程
+	if(lift_mode == Ready_MODE)
+	{
+		if(lift_update->motor_lift[2].angle > 29)
+		{
+			lift_mode = Start_MODE;
+		}
+	}
+	//开始模式
+	if(lift_mode == Start_MODE)
 	{
 		//更新升降任务状态
 		switch(lift_update->lift_RC->rc.s[0])
@@ -167,27 +180,72 @@ void lift_feedback_update(lift_move_t *lift_update)
 	{
 		lift_mode = Init_MODE;
 	}
+	last_lift_mode = lift_mode;//上一次升降状态
 	
-	last_lift_mode = lift_mode;
+	//更新电机速度
+	lift_update->motor_lift[0].speed = lift_update->motor_lift[0].lift_motor_measure->filter_rate / 19.0f;
+	lift_update->motor_lift[1].speed = lift_update->motor_lift[1].lift_motor_measure->filter_rate / 19.0f;
+	lift_update->motor_lift[2].speed = lift_update->motor_lift[2].lift_motor_measure->filter_rate / 19.0f;
+	
+	//更新电机角度
+	lift_update->motor_lift[0].angle = lift_update->motor_lift[0].lift_motor_measure->angle * Pai * 3.0f / 360.0f - lift_update->lift_right_cail;//(0~15cm)
+	lift_update->motor_lift[1].angle = lift_update->motor_lift[1].lift_motor_measure->angle * Pai * 3.0f / 360.0f - lift_update->lift_left_cail;
+	lift_update->motor_lift[2].angle = lift_update->motor_lift[2].lift_motor_measure->angle * Pai * 3.0f / 360.0f - lift_update->translation_cail;
 }
 
 //升降控制PID计算
 void lift_control_loop(lift_move_t *lift_control)
 {	
+	/**********************************************气缸控制*******************************************************************/
+	switch(pinch_mode)
+	{
+		case PINCH_INIT://初始状态
+		{
+			
+			break;
+		}			
+		case PINCH_RISE://取弹状态
+		{
+			
+			break;
+		}
+		case PINCH_GIVE://给弹状态
+		{
+			
+			break;
+		}
+		default:
+		{
+			break;
+		}
+	}
+	/**********************************************气缸控制*******************************************************************/
+	
+	/**********************************************电机控制*******************************************************************/
 	switch(lift_mode)
 	{
 		case Stop_MODE://停止状态
 		{
-			//升降位置输入
 			lift_control->motor_lift[2].angle_set = lift_control->motor_lift[2].angle;
+			lift_control->motor_lift[2].speed_set = 0;
+			break;
+		}
+		case Init_MODE://初始化模式
+		{	
+			lift_control->motor_lift[0].angle_set = lift_control->motor_lift[0].angle;
+			lift_control->motor_lift[2].speed_set = -20;//-20
+			break;
+		}
+		case Ready_MODE://开始模式
+		{
+			lift_control->motor_lift[2].angle_set = -35.5f;
 			break;
 		}
 		case Rc_MODE://遥控手杆状态
 		{
 			//升降位置输入
 			lift_control->motor_lift[0].angle_set += lift_control->lift_RC->rc.ch[3] * 0.0005f;		
-			//lift_control->motor_lift[2].speed_set = -lift_control->lift_RC->rc.ch[2] * 0.0454f;		
-			lift_control->motor_lift[2].angle_set = -0.0f;
+			lift_control->motor_lift[2].angle_set += lift_control->lift_RC->rc.ch[2] * 0.0005f;//-35
 			break;
 		}
 		case Key_MODE://键盘模式
@@ -197,7 +255,7 @@ void lift_control_loop(lift_move_t *lift_control)
 					case PINCH_INIT://初始状态
 					{
 						//升降位置输入
-						lift_control->motor_lift[0].angle_set = 2.0f;
+						lift_control->motor_lift[0].angle_set = 1.0f;
 						break;
 					}
 					case PINCH_RISE://升高
@@ -217,6 +275,7 @@ void lift_control_loop(lift_move_t *lift_control)
 						break; 
 					}
 				}
+				lift_control->motor_lift[2].angle_set += lift_control->lift_RC->rc.ch[2] * 0.0005f;//-35
 			break;
 		}
 		default:
@@ -230,10 +289,21 @@ void lift_control_loop(lift_move_t *lift_control)
 	{
 		lift_control->motor_lift[0].angle_set = 15.0;
 	}
-	else if(lift_control->motor_lift[0].angle_set < 2.01f)
+	else if(lift_control->motor_lift[0].angle_set < 1.01f)
 	{
-		lift_control->motor_lift[0].angle_set = 2.0;
+		lift_control->motor_lift[0].angle_set = 1.0;
 	}
+	
+	//平移距离限幅
+	if(lift_control->motor_lift[2].angle_set < -68.1f)
+	{
+		lift_control->motor_lift[2].angle_set = -68.0;
+	}
+	else if(lift_control->motor_lift[2].angle_set > -4.99f)
+	{
+		lift_control->motor_lift[2].angle_set = -5.0;
+	}
+	
 	//高度输入
 	lift_control->motor_lift[1].angle_set = -lift_control->motor_lift[0].angle_set;
 	
@@ -246,21 +316,32 @@ void lift_control_loop(lift_move_t *lift_control)
 		PID_Calc(&lift_control->motor_speed_pid[i], lift_control->motor_lift[i].speed, lift_control->motor_pos_pid[i].out);
 	}
 	
-	//平移计算PID
-	//PID_Calc(&lift_control->motor_speed_pid[2], lift_control->motor_lift[2].speed, lift_control->motor_lift[2].speed_set);
-	
-	if(lift_mode == Stop_MODE)
+	if(lift_mode == Stop_MODE)//停止状态
 	{
 		//赋值电流值
-		lift_control->motor_lift[0].give_current = lift_control->motor_lift[1].give_current  = lift_control->motor_lift[2].give_current = 0;
+		lift_control->motor_lift[0].give_current = lift_control->motor_lift[1].give_current = 0;
+		lift_control->motor_lift[2].give_current = PID_Calc(&lift_control->motor_speed_pid[2], lift_control->motor_lift[2].speed, lift_control->motor_lift[2].speed_set); 
 	}
-	else
+	else if(lift_mode == Init_MODE)//初始状态
+	{
+		//赋值电流值
+		lift_control->motor_lift[0].give_current = lift_control->motor_lift[1].give_current = 0;
+		lift_control->motor_lift[2].give_current = PID_Calc(&lift_control->motor_speed_pid[2], lift_control->motor_lift[2].speed, lift_control->motor_lift[2].speed_set);
+	}
+	else if(lift_mode == Ready_MODE)//准备状态
+	{
+		//赋值电流值
+		lift_control->motor_lift[0].give_current = lift_control->motor_lift[1].give_current = 0;
+		lift_control->motor_lift[2].give_current = lift_control->motor_speed_pid[2].out;
+	}
+	else//正常状态
 	{
 		//赋值电流值
 		lift_control->motor_lift[0].give_current = lift_control->motor_speed_pid[0].out;
 		lift_control->motor_lift[1].give_current = lift_control->motor_speed_pid[1].out;
 		lift_control->motor_lift[2].give_current = lift_control->motor_speed_pid[2].out;
 	}
+	/**********************************************电机控制*******************************************************************/
 }
 
 //返回升降状态
@@ -269,3 +350,21 @@ uint8_t get_pinch_state(void)
 	return pinch_mode;
 }
 
+
+//取弹按键
+void Set_LIFT_KEY_GPIO(uint16_t key, uint16_t key1, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint32_t time)
+{
+	static uint32_t lift_last_time = 0;
+	if((key & key1) && (time - lift_last_time >250))
+	{
+		lift_last_time = time;
+		if(HAL_GPIO_ReadPin(GPIOx,GPIO_Pin) == 0)
+		{
+			HAL_GPIO_WritePin(GPIOx,GPIO_Pin,GPIO_PIN_SET); 
+		}
+		else
+		{
+			HAL_GPIO_WritePin(GPIOx,GPIO_Pin,GPIO_PIN_RESET); 
+		}
+	}
+}

@@ -8,15 +8,22 @@
 #define Pai 3.141592653589793f
 
 //上层继电器
-/*翻转
-	升
+/*升
 	夹取
+	翻转
 	弹开
 	*/
 #define EXTEND				  GPIOE,GPIO_PIN_1
 #define PINCH  					GPIOE,GPIO_PIN_2
 #define FLIP            GPIOE,GPIO_PIN_3
 #define BOUNCE 					GPIOE,GPIO_PIN_4
+
+/*
+	限位开关
+	*/
+#define Limit_Switch    GPIOE,GPIO_PIN_0
+
+
 
 
 /**********************************************************************************
@@ -44,9 +51,11 @@
 typedef enum
 {
 	Init_MODE      = 0,      //初始状态
-  Rc_MODE			   = 1,      //遥控状态
-	Key_MODE  		 = 2,      //键盘状态
-	Stop_MODE      = 3,      //停止状态
+	Ready_MODE     = 1,			 //准备模式
+	Start_MODE     = 2,      //开始模式
+  Rc_MODE			   = 3,      //遥控状态
+	Key_MODE  		 = 4,      //键盘状态
+	Stop_MODE      = 5,      //停止状态
 } lift_mode_e;
 
 typedef enum
@@ -70,12 +79,17 @@ typedef struct
 
 typedef struct
 {
-  const RC_ctrl_t *lift_RC;               //底盘使用的遥控器指针
-  Lift_Motor_t motor_lift[3];          //底盘电机数据
-  PidTypeDef motor_speed_pid[3];             //升降电机速度pid
-	PidTypeDef motor_pos_pid[3];               //升降电机位置pid
+  const RC_ctrl_t *lift_RC;              //底盘使用的遥控器指针
+  Lift_Motor_t motor_lift[3];         	 //底盘电机数据
+  PidTypeDef motor_speed_pid[3];         //升降电机速度pid
+	PidTypeDef motor_pos_pid[3];           //升降电机位置pid
 	lift_mode_e mode;
 	
+	float lift_left_cail;
+	float lift_right_cail;
+	float translation_cail;
+	
+	float key_time;
 } lift_move_t;
 
 //升降任务
@@ -88,4 +102,6 @@ void lift_feedback_update(lift_move_t *lift_update);
 void lift_control_loop(lift_move_t *lift_control);
 //返回取弹状态
 uint8_t get_pinch_state(void);
+//取弹按键
+void Set_LIFT_KEY_GPIO(uint16_t key, uint16_t key1, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint32_t time);
 #endif
