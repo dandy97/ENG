@@ -23,8 +23,32 @@
 	*/
 #define Limit_Switch    GPIOE,GPIO_PIN_0
 
+/*
+	´ÅÐÔ¿ª¹Ø
+	µ¯
+	¼ÐÈ¡
+	ÉìËõ
+	*/
+#define Bounce_State    HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_2)
+#define Pinch_State    	HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_2)
+#define Extend_State    HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_3)
 
-
+/*
+	Æø¸×¿ØÖÆ
+	³õÊ¼
+	·­
+	·­->¼Ð
+	·­->¼Ð->·­
+	·­->¼Ð->·­->ËÉ
+	·­->¼Ð->·­->ËÉ->µ¯¿ª
+	*/
+ 
+#define Reset_control    HAL_GPIO_WritePin(FLIP,GPIO_PIN_RESET);HAL_GPIO_WritePin(PINCH,GPIO_PIN_RESET);HAL_GPIO_WritePin(BOUNCE,GPIO_PIN_RESET);
+#define Bounce_control   HAL_GPIO_WritePin(FLIP,GPIO_PIN_SET);HAL_GPIO_WritePin(PINCH,GPIO_PIN_RESET);HAL_GPIO_WritePin(BOUNCE,GPIO_PIN_RESET);
+#define Bounce_Pinch_control HAL_GPIO_WritePin(FLIP,GPIO_PIN_SET);HAL_GPIO_WritePin(PINCH,GPIO_PIN_SET);HAL_GPIO_WritePin(BOUNCE,GPIO_PIN_RESET);
+#define Bounce_Pinch_Bounce_control HAL_GPIO_WritePin(FLIP,GPIO_PIN_RESET);HAL_GPIO_WritePin(PINCH,GPIO_PIN_SET);HAL_GPIO_WritePin(BOUNCE,GPIO_PIN_RESET);
+#define Bounce_Pinch_Bounce_Pinch_control HAL_GPIO_WritePin(FLIP,GPIO_PIN_RESET);HAL_GPIO_WritePin(PINCH,GPIO_PIN_RESET);HAL_GPIO_WritePin(BOUNCE,GPIO_PIN_RESET);
+#define Bounce_Pinch_Bounce_Pinch_Flip_control HAL_GPIO_WritePin(FLIP,GPIO_PIN_RESET);HAL_GPIO_WritePin(PINCH,GPIO_PIN_RESET);HAL_GPIO_WritePin(BOUNCE,GPIO_PIN_SET);			
 
 /**********************************************************************************
  * bit      :15   14   13   12   11   10   9   8   7   6     5     4   3   2   1
@@ -107,4 +131,6 @@ uint8_t get_pinch_state(void);
 void Set_LIFT_KEY_GPIO(uint16_t key, uint16_t key1, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint32_t time);
 //Êó±ê¿ØÖÆÆø¸×
 void contrl_cylinder(uint8_t key, uint8_t key1, uint32_t time);
+//Ò»´ÎÈ¡5¸ö
+void Auto_eat_five(uint16_t key, uint16_t key1, uint8_t key2, uint32_t time, float angle, float *a);
 #endif

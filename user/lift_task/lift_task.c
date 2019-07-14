@@ -20,6 +20,8 @@ lift_mode_e lift_mode = Init_MODE;
 lift_mode_e last_lift_mode = Init_MODE;
 pinch_mode_e pinch_mode = PINCH_INIT;
 pinch_mode_e last_pinch_mode = PINCH_INIT;
+
+static uint8_t auto_five_state = 0;//你赢了
 //登岛电机数据结构
 chassis_move_t lift_wheel;
 //升降电机数据结构体
@@ -41,8 +43,7 @@ void lift_task(void *pvParameters)
 		lift_control_loop(&lift_move);
 		//发送电流值
 		CAN_CMD_LIFT(lift_move.motor_lift[0].give_current, lift_move.motor_lift[1].give_current, lift_move.motor_lift[2].give_current, 0);
-		//Ni_Ming(0xf1,lift_move.motor_lift[0].angle ,lift_move.motor_lift[1].angle_set, 0, 0);
-		//printf("%d\r\n",HAL_GPIO_ReadPin(EXTEND)<<3 | HAL_GPIO_ReadPin(PINCH)<<2 | HAL_GPIO_ReadPin(FLIP)<<1 | HAL_GPIO_ReadPin(BOUNCE));
+		//Ni_Ming(0xf1,lift_move.motor_lift[0].angle ,lift_move.motor_lift[2].angle_set, 0, 0);
 		//控制频率4ms
 		vTaskDelay(4);
 		lift_high_water = uxTaskGetStackHighWaterMark(NULL);
@@ -90,7 +91,7 @@ void lift_init(lift_move_t *lift_init)
 	}
 	
 	//初始化平移位置、速度环PID
-	PID_Init(&lift_init->motor_pos_pid[2], PID_POSITION, translation_pos_pid, 50, 0);
+	PID_Init(&lift_init->motor_pos_pid[2], PID_POSITION, translation_pos_pid, 60, 0);
 	PID_Init(&lift_init->motor_speed_pid[2], PID_POSITION, translation_speed_pid, 10000, 3000);
 	
 	//更新一下数据
@@ -185,6 +186,7 @@ void lift_feedback_update(lift_move_t *lift_update)
 			}
 			else if(lift_update->lift_RC->rc.s[1] == 3)
 			{
+				auto_five_state = 0;//你赢了
 				if(pretect_lift == 1)
 				{
 					lift_mode = Reset_MODE;//复位模式
@@ -269,7 +271,7 @@ void lift_control_loop(lift_move_t *lift_control)
 		case Init_MODE://初始化模式
 		{	
 			lift_control->motor_lift[0].angle_set = lift_control->motor_lift[0].angle;
-			lift_control->motor_lift[2].speed_set = -20;//-20
+			lift_control->motor_lift[2].speed_set = -25;//-25
 			break;
 		}
 		case Ready_MODE://开始模式
@@ -286,7 +288,7 @@ void lift_control_loop(lift_move_t *lift_control)
 		{
 			//升降位置输入
 			lift_control->motor_lift[0].angle_set += lift_control->lift_RC->rc.ch[3] * 0.0005f;		
-			lift_control->motor_lift[2].angle_set += lift_control->lift_RC->rc.ch[2] * 0.0005f;//-35
+			//lift_control->motor_lift[2].angle_set += lift_control->lift_RC->rc.ch[2] * 0.0005f;//-35
 			break;
 		}
 		case Key_MODE://键盘模式
@@ -296,10 +298,11 @@ void lift_control_loop(lift_move_t *lift_control)
 					case 1://初始状态
 					{
 						//升降位置输入
-						lift_control->motor_lift[0].angle_set = 12.0f;
+						lift_control->motor_lift[0].angle_set = 19.0f;
+						//平移位置输入
 						if(lift_control->motor_lift[0].angle > -10.5f && lift_control->motor_lift[0].angle < -9.0f)
 						{
-							lift_control->motor_lift[2].angle_set = -60.0f;
+							lift_control->motor_lift[2].angle_set = -35.0f;
 						}
 						if(lift_control->lift_RC->key.v == Q)//左移
 						{
@@ -309,6 +312,8 @@ void lift_control_loop(lift_move_t *lift_control)
 						{
 							lift_control->motor_lift[2].angle_set += 0.1f;
 						}
+						//一次取5个
+						Auto_eat_five(lift_control->lift_RC->key.v, F, lift_control->lift_RC->mouse.press_r,lift_control->key_time, lift_control->motor_lift[2].angle, &lift_control->motor_lift[2].angle_set);
 						break;
 					}
 					case 3://升高
@@ -337,9 +342,9 @@ void lift_control_loop(lift_move_t *lift_control)
 	}
 	
 	//升降高度限幅(2cm ~ 15cm)
-	if(lift_control->motor_lift[0].angle_set > 17.0f)
+	if(lift_control->motor_lift[0].angle_set > 19.0f)
 	{
-		lift_control->motor_lift[0].angle_set = 17.0;
+		lift_control->motor_lift[0].angle_set = 19.0;
 	}
 	else if(lift_control->motor_lift[0].angle_set < 1.01f)
 	{
@@ -402,6 +407,15 @@ uint8_t get_pinch_state(void)
 	return pinch_mode;
 }
 
+//void Auto_Pinch()
+//{
+//	static uint32_t Auto_Pinch_time = 0;
+//	Auto_Pinch_time++;
+//	if(Auto_Pinch_time)
+//	{
+//	
+//	}
+//}	
 
 //取弹按键
 void Set_LIFT_KEY_GPIO(uint16_t key, uint16_t key1, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint32_t time)
@@ -447,38 +461,168 @@ void contrl_cylinder(uint8_t key, uint8_t key1, uint32_t time)
 	}
 	if(cylinder_state == 0)//初始
 	{
-		HAL_GPIO_WritePin(FLIP,GPIO_PIN_RESET);
-		HAL_GPIO_WritePin(PINCH,GPIO_PIN_RESET);
-		HAL_GPIO_WritePin(BOUNCE,GPIO_PIN_RESET);
+		Reset_control;
 	}
 	if(cylinder_state == 1)//翻
 	{
-		HAL_GPIO_WritePin(FLIP,GPIO_PIN_SET);
-		HAL_GPIO_WritePin(PINCH,GPIO_PIN_RESET);
-		HAL_GPIO_WritePin(BOUNCE,GPIO_PIN_RESET);
+		Bounce_control;
 	}
 	if(cylinder_state == 2)//翻->夹
 	{
-		HAL_GPIO_WritePin(FLIP,GPIO_PIN_SET);
-		HAL_GPIO_WritePin(PINCH,GPIO_PIN_SET);
-		HAL_GPIO_WritePin(BOUNCE,GPIO_PIN_RESET);
+		Bounce_Pinch_control;
 	}
 	if(cylinder_state == 3)//翻->夹->翻
 	{
-		HAL_GPIO_WritePin(FLIP,GPIO_PIN_RESET);
-		HAL_GPIO_WritePin(PINCH,GPIO_PIN_SET);
-		HAL_GPIO_WritePin(BOUNCE,GPIO_PIN_RESET);
+		Bounce_Pinch_Bounce_control;
 	}
 	if(cylinder_state == 4)//翻->夹->翻->松
 	{
-		HAL_GPIO_WritePin(FLIP,GPIO_PIN_RESET);
-		HAL_GPIO_WritePin(PINCH,GPIO_PIN_RESET);
-		HAL_GPIO_WritePin(BOUNCE,GPIO_PIN_RESET);
+		Bounce_Pinch_Bounce_Pinch_control;
 	}
 	if(cylinder_state == 5)//翻->夹->翻->松->弹开
 	{
-		HAL_GPIO_WritePin(FLIP,GPIO_PIN_RESET);
-		HAL_GPIO_WritePin(PINCH,GPIO_PIN_RESET);
-		HAL_GPIO_WritePin(BOUNCE,GPIO_PIN_SET);
+		Bounce_Pinch_Bounce_Pinch_Flip_control;
+	}
+}
+
+void Auto_eat_five(uint16_t key, uint16_t key1, uint8_t key2, uint32_t time, float angle, float *a)
+{
+	static uint32_t auto_last_time, next_time = 0;
+	if((key & key1) && (time - auto_last_time > 250))
+	{
+		auto_last_time = time;
+		auto_five_state = 1;
+	}
+	if(key2 == 1)//鼠标右键退出
+	{
+		auto_five_state = 0;
+	}
+	switch(auto_five_state)
+	{
+		case 0://第一个弹药箱
+		{   
+			next_time = 0;
+			break;
+		}
+		case 1://第一个弹药箱
+		{   
+			*a = -35;
+			if(angle > 30 && angle < 40)
+			{
+				next_time++;
+				if     (next_time > 200){Bounce_Pinch_Bounce_Pinch_Flip_control;}
+				else if(next_time > 150){Bounce_Pinch_Bounce_Pinch_control;}
+				else if(Pinch_State){Bounce_Pinch_Bounce_control;}
+				else if(next_time > 50) {Bounce_Pinch_control;}
+				else if(next_time > 20) {Bounce_control;}
+				if(Bounce_State && next_time > 200)
+				{
+					auto_five_state = 2;
+					next_time = 0;
+				}
+			}
+			else
+			{
+				Reset_control;
+			}
+			break;
+		}
+		case 2://第二个弹药箱
+		{
+			*a = -65;
+			if(angle > 60 && angle < 70)
+			{
+				next_time++;
+				if     (next_time > 200){Bounce_Pinch_Bounce_Pinch_Flip_control;}
+				else if(next_time > 150){Bounce_Pinch_Bounce_Pinch_control;}
+				else if(Pinch_State){Bounce_Pinch_Bounce_control;}
+				else if(next_time > 50) {Bounce_Pinch_control;}
+				else if(next_time > 20) {Bounce_control;}
+				if(Bounce_State && next_time > 200)
+				{
+					auto_five_state = 3;
+					next_time = 0;
+				}
+			}
+			else
+			{
+				Reset_control;
+			}
+			break;
+		}
+		case 3://第三个弹药箱
+		{
+			*a = -5;
+			if(angle > 0 && angle < 10)
+			{
+				next_time++;
+				if     (next_time > 200){Bounce_Pinch_Bounce_Pinch_Flip_control;}
+				else if(next_time > 150){Bounce_Pinch_Bounce_Pinch_control;}
+				else if(Pinch_State){Bounce_Pinch_Bounce_control;}
+				else if(next_time > 50) {Bounce_Pinch_control;}
+				else if(next_time > 20) {Bounce_control;}
+				if(Bounce_State && next_time > 200)
+				{
+					auto_five_state = 4;
+					next_time = 0;
+				}
+			}
+			else
+			{
+				Reset_control;
+			}
+			break;
+		}
+		case 4://第四个弹药箱
+		{
+			*a = -25;
+			HAL_GPIO_WritePin(EXTEND,GPIO_PIN_SET);
+			if(angle > 20 && angle < 30)
+			{
+				next_time++;
+				if     (next_time > 200){Bounce_Pinch_Bounce_Pinch_Flip_control;}
+				else if(next_time > 150){Bounce_Pinch_Bounce_Pinch_control;}
+				else if(Pinch_State){Bounce_Pinch_Bounce_control;}
+				else if(next_time > 50) {Bounce_Pinch_control;}
+				else if(next_time > 20) {Bounce_control;}
+				if(Bounce_State && next_time > 200)
+				{
+					auto_five_state = 5;
+					next_time = 0;
+				}
+			}
+			break;
+		}
+		case 5://第五个弹药箱
+		{
+			HAL_GPIO_WritePin(EXTEND,GPIO_PIN_SET);
+			*a = -55;
+			if(angle > 50 && angle < 60)
+			{
+				next_time++;
+				if     (next_time > 200){Bounce_Pinch_Bounce_Pinch_Flip_control;}
+				else if(next_time > 150){Bounce_Pinch_Bounce_Pinch_control;}
+				else if(Pinch_State){Bounce_Pinch_Bounce_control;}
+				else if(next_time > 50) {Bounce_Pinch_control;}
+				else if(next_time > 20) {Bounce_control;}
+				if(Bounce_State && next_time > 200)
+				{
+					auto_five_state = 6;
+					next_time = 0;
+				}
+			}
+			break;
+		}
+		case 6://第五个弹药箱
+		{
+			*a = -35;
+			HAL_GPIO_WritePin(EXTEND,GPIO_PIN_RESET);
+			auto_five_state = 0;
+			break;
+		}
+		default:
+		{
+			break; 
+		}
 	}
 }
