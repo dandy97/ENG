@@ -30,6 +30,7 @@
 	伸缩
 	*/
 #define Bounce_State    HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_2)
+#define Flip_State			HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_3)
 #define Pinch_State    	HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_2)
 #define Extend_State    HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_3)
 
@@ -85,7 +86,9 @@ typedef enum
 
 typedef enum
 {
-	PINCH_INIT = 0,					//初始状态
+	Pinch_Init = 0,					//初始状态
+	Pinch_Rc,
+	Pinch_Key,
 	PINCH_RISE,							//升高
 	PINCH_GIVE,							//给弹
 }
@@ -104,10 +107,19 @@ typedef struct
 
 typedef struct
 {
+ 	uint8_t pinch;
+	uint8_t extend;
+	uint8_t flip;
+	uint8_t bounce;
+} Cylinder_State_t;
+
+typedef struct
+{
   const RC_ctrl_t *lift_RC;              //底盘使用的遥控器指针
   Lift_Motor_t motor_lift[3];         	 //底盘电机数据
   PidTypeDef motor_speed_pid[3];         //升降电机速度pid
 	PidTypeDef motor_pos_pid[3];           //升降电机位置pid
+	Cylinder_State_t cylinder_state;
 	lift_mode_e mode;
 	
 	float lift_left_cail;
@@ -115,6 +127,8 @@ typedef struct
 	float translation_cail;
 	
 	float key_time;
+	float last_key_time;
+	uint8_t auto_mode;
 } lift_move_t;
 
 //升降任务
@@ -133,4 +147,7 @@ void Set_LIFT_KEY_GPIO(uint16_t key, uint16_t key1, GPIO_TypeDef* GPIOx, uint16_
 void contrl_cylinder(uint8_t key, uint8_t key1, uint32_t time);
 //一次取5个
 void Auto_eat_five(uint16_t key, uint16_t key1, uint8_t key2, uint32_t time, float angle, float *a);
+//自动取弹
+void Auto_Auto_Auto(Cylinder_State_t *cylinde_state, uint8_t *mode);
+void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, float *angle_set, float *high_angle_set);
 #endif

@@ -40,7 +40,7 @@ void chassis_task(void *pvParameters)
 		//底盘控制PID计算
 		chassis_control_loop(&chassis_move);
 		//射击任务控制循环
-		CAN_CMD_CHASSIS(chassis_move.motor_chassis[0].give_current, chassis_move.motor_chassis[1].give_current,	chassis_move.motor_chassis[2].give_current, chassis_move.motor_chassis[3].give_current);
+		//CAN_CMD_CHASSIS(chassis_move.motor_chassis[0].give_current, chassis_move.motor_chassis[1].give_current,	chassis_move.motor_chassis[2].give_current, chassis_move.motor_chassis[3].give_current);
 		//Ni_Ming(0xf1,chassis_move.vw_set, chassis_move.gyro_data->yaw, 0, 0);
 		//底盘任务频率4ms	 
 		if((send_lift_wheel++) % 4 == 0)

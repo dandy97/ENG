@@ -67,3 +67,15 @@ void Put_Out_Init(void)
 	GPIO_Initure.Speed = GPIO_SPEED_HIGH;     
 	HAL_GPIO_Init(GPIOE,&GPIO_Initure);
 }
+
+void Control_Gpio(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint8_t key)
+{
+	if(key == 1)
+	{
+		HAL_GPIO_WritePin(GPIOx,GPIO_Pin,GPIO_PIN_SET);
+	}
+	if(key == 0)
+	{
+		HAL_GPIO_WritePin(GPIOx,GPIO_Pin,GPIO_PIN_RESET);
+	}
+}

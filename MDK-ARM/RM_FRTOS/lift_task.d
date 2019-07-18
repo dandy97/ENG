@@ -55,3 +55,4 @@ rm_frtos\lift_task.o: ..\user\usart1\usart1.h
 rm_frtos\lift_task.o: ..\user\chassis_task\chassis_task.h
 rm_frtos\lift_task.o: ..\user\tof\tof.h
 rm_frtos\lift_task.o: ..\user\lift_wheel\lift_wheel.h
+rm_frtos\lift_task.o: ..\user\put_out\put_out.h
