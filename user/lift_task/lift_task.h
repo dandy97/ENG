@@ -26,13 +26,14 @@
 /*
 	磁性开关
 	弹
-	夹取
+	后翻
+	前翻
 	伸缩
 	*/
-#define Bounce_State    HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_2)
-#define Flip_State			HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_3)
-#define Pinch_State    	HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_2)
-#define Extend_State    HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_3)
+#define Bounce_State        HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_2)
+#define Flip_Back_State			HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_3)
+#define Flip_For_State    	HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_2)
+#define Extend_State        HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_3)
 
 /*
 	气缸控制

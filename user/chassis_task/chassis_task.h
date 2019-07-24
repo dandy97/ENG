@@ -103,6 +103,7 @@ typedef struct
 
 typedef struct
 {
+	const tof_can_data_t *tof_can_measure;
 	const tof_data_t *tof_measure;
   const RC_ctrl_t *chassis_RC;               //µ×ÅÌÊ¹ÓÃµÄÒ£¿ØÆ÷Ö¸Õë
 	const gyro_info_t *gyro_data;						   //ÍÓÂİÒÇÊı¾İ
@@ -112,9 +113,15 @@ typedef struct
 	PidTypeDef chassis_acc_pid;
 	PidTypeDef chassis_gryo_pid;
 	
-	int32_t  tof_h;                              //µ×ÅÌºóÂÖtof
+	uint16_t tof_h;                            //µ×ÅÌºóÂÖtof
+	uint16_t pinch_dis_r;  										 //È¡µ¯tof¾àÀë
+	uint16_t pinch_dis_l;	 									   //È¡µ¯tof¾àÀë
+	uint16_t climb_dis_r;  										 //µÇµºtof¾àÀë
+	uint16_t climb_dis_l;
 	uint32_t key_time;
 	uint32_t last_press_time;
+	
+	float  vy_mouse;
 	float    vx;
 	float    vx_offset;
 	float    vy;

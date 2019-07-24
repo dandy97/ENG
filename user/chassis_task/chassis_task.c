@@ -40,8 +40,8 @@ void chassis_task(void *pvParameters)
 		//底盘控制PID计算
 		chassis_control_loop(&chassis_move);
 		//射击任务控制循环
-		//CAN_CMD_CHASSIS(chassis_move.motor_chassis[0].give_current, chassis_move.motor_chassis[1].give_current,	chassis_move.motor_chassis[2].give_current, chassis_move.motor_chassis[3].give_current);
-		//Ni_Ming(0xf1,chassis_move.vw_set, chassis_move.gyro_data->yaw, 0, 0);
+		CAN_CMD_CHASSIS(chassis_move.motor_chassis[0].give_current, chassis_move.motor_chassis[1].give_current,	chassis_move.motor_chassis[2].give_current, chassis_move.motor_chassis[3].give_current);
+		//Ni_Ming(0xf1,0, 0, chassis_move.pinch_dis_l,chassis_move.pinch_dis_r);
 		//底盘任务频率4ms	 
 		if((send_lift_wheel++) % 4 == 0)
 		{
@@ -81,6 +81,9 @@ void chassis_init(chassis_move_t *chassis_init)
 	//获取后轮tof数据
 	chassis_init->tof_measure = get_tof_Info_Measure_Point();
 	
+	//获取登岛取弹tof数据
+	chassis_init->tof_can_measure = get_tof_can_Info_Measure_Point();
+	
 	//初始化底盘速度环PID 
 	for (uint8_t i = 0; i < 6; i++)
 	{
@@ -117,7 +120,12 @@ void chassis_feedback_update(chassis_move_t *chassis_update)
 	chassis_update->motor_chassis[4].speed = chassis_update->motor_chassis[4].chassis_motor_measure->filter_rate / 19.0f;
 	chassis_update->motor_chassis[5].speed = chassis_update->motor_chassis[5].chassis_motor_measure->filter_rate / 19.0f;
 	chassis_update->vw_mouse = chassis_update->chassis_RC->mouse.x;
+	chassis_update->vy_mouse += chassis_update->chassis_RC->mouse.y * 0.05f;
 	chassis_update->tof_h = chassis_update->tof_measure->tof_h;
+	chassis_update->climb_dis_l = chassis_update->tof_can_measure->climb_dis_l;
+	chassis_update->climb_dis_r = chassis_update->tof_can_measure->climb_dis_r;
+	chassis_update->pinch_dis_l = chassis_update->tof_can_measure->pinch_dis_l;
+	chassis_update->pinch_dis_r = chassis_update->tof_can_measure->pinch_dis_r;
 	chassis_update->yaw = chassis_update->gyro_data->yaw;
 	
 	//更新底盘状态
@@ -172,12 +180,11 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 		{
 			chassis_control->key_time++;//4ms一次
 			
-			/**********************************************  速度挡*******************************************************************/
-			
+			/**********************************************  速度挡*******************************************************************/			
 			if(chassis_control->chassis_RC->rc.s[1] == 1)
 			{
-				chassis_control->vy_offset = 12;
-				chassis_control->vx_offset = 12;
+				chassis_control->vy_offset = 30;
+				chassis_control->vx_offset = 20;
 			}
 			else if(chassis_control->chassis_RC->key.v & SHIFT)//shitf加速																
 			{
@@ -226,10 +233,24 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 			//旋转
 			if(chassis_control->chassis_RC->rc.s[1] == 1)//取弹状态 不能左右旋转
 			{
+				chassis_control->vw_offset = 0;
 				chassis_control->vw_set = chassis_control->gyro_data->yaw;
+				chassis_control->gyro_angle_start = chassis_control->gyro_data->yaw;
+				if(chassis_control->chassis_RC->key.v & R)//一键对位
+				{
+					if(chassis_control->pinch_dis_l < 19.0f && chassis_control->pinch_dis_r < 19.0f)
+					{
+						chassis_control->vy = 0.0f;
+					}
+					else if(chassis_control->pinch_dis_l > 16.0f || chassis_control->pinch_dis_r > 16.0f)
+					{
+						chassis_control->vy = 25.0f;
+					}
+				}
 			}
 			else if((chassis_control->chassis_RC->key.v & CTRL) && (chassis_control->key_time - chassis_control->last_press_time >500))//转180
 			{
+				chassis_control->gyro_angle_start = chassis_control->gyro_data->yaw;
 				chassis_control->last_press_time = chassis_control->key_time;
 				chassis_control->vw_offset += 180;//转180
 			}
@@ -237,7 +258,7 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 			{
 				if(chassis_control->vw_mouse >  60)chassis_control->vw_mouse = 60; 
 				if(chassis_control->vw_mouse < -60)chassis_control->vw_mouse = -60;			
-				chassis_control->vw_offset -= chassis_control->vw_mouse * 0.02;
+				chassis_control->vw_offset -= chassis_control->vw_mouse * 0.003;
 				chassis_control->vw_set = chassis_control->vw_offset + chassis_control->gyro_angle_start;
 			}
 			
@@ -281,14 +302,13 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 	PID_Calc(&chassis_control->chassis_gryo_pid, chassis_control->yaw, chassis_control->vw_set);
 	//Z轴角速度PID计算	
 	chassis_control->vw = PID_Calc(&chassis_control->chassis_acc_pid, -chassis_control->gyro_data->v_z, -chassis_control->chassis_gryo_pid.out);
-	
 	//底盘速度设定
 	chassis_control->motor_chassis[0].speed_set = +(int16_t)chassis_control->vx - (int16_t)chassis_control->vy + (int16_t)chassis_control->vw;
 	chassis_control->motor_chassis[1].speed_set = +(int16_t)chassis_control->vx + (int16_t)chassis_control->vy + (int16_t)chassis_control->vw;
 	chassis_control->motor_chassis[2].speed_set = -(int16_t)chassis_control->vx - (int16_t)chassis_control->vy + (int16_t)chassis_control->vw;
 	chassis_control->motor_chassis[3].speed_set = -(int16_t)chassis_control->vx + (int16_t)chassis_control->vy + (int16_t)chassis_control->vw;
-	chassis_control->motor_chassis[4].speed_set = 0;
-	chassis_control->motor_chassis[5].speed_set = 0;
+	chassis_control->motor_chassis[4].speed_set = -(int16_t)chassis_control->vy;
+	chassis_control->motor_chassis[5].speed_set = (int16_t)chassis_control->vy;
 	
 	//计算PID
 	PID_Calc(&chassis_control->motor_speed_pid[0], chassis_control->motor_chassis[0].speed, chassis_control->motor_chassis[0].speed_set);
@@ -305,6 +325,17 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 	chassis_control->motor_chassis[3].give_current = (int16_t)(chassis_control->motor_speed_pid[3].out);
 	chassis_control->motor_chassis[4].give_current = (int16_t)(chassis_control->motor_speed_pid[4].out);
 	chassis_control->motor_chassis[5].give_current = (int16_t)(chassis_control->motor_speed_pid[5].out);
+	
+	TIM4->CCR4 = 1050 + chassis_control->vy_mouse;
+	if(chassis_control->vy_mouse > 750)
+	{
+		 chassis_control->vy_mouse = 750;
+	}
+	else if(chassis_control->vy_mouse < 0)
+		{
+		 chassis_control->vy_mouse = 0;
+	}
+		//printf("%f\r\n",chassis_control->vy_mouse);
 }
 
 //返回底盘任务状态

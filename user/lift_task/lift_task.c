@@ -43,7 +43,6 @@ void lift_task(void *pvParameters)
 		lift_control_loop(&lift_move);
 		//发送电流值
 		CAN_CMD_LIFT(lift_move.motor_lift[0].give_current, lift_move.motor_lift[1].give_current, lift_move.motor_lift[2].give_current, 0);
-		//printf("%d",Flip_State);
 		//Ni_Ming(0xf1,lift_move.motor_lift[0].angle ,lift_move.motor_lift[2].angle_set, 0, 0);
 		//控制频率4ms
 		vTaskDelay(4);
@@ -67,7 +66,7 @@ void lift_init(lift_move_t *lift_init)
 	const static float lift_pos_pid[3] = {10, 0, 0};
 	
 	//平移速度位置环
-	const static float translation_pos_pid[3] = {9, 0, 0};
+	const static float translation_pos_pid[3] = {25, 0, 0};
 	const static float translation_speed_pid[3] = {200, 0, 0};
 	
 	//获取遥控指针 
@@ -94,7 +93,7 @@ void lift_init(lift_move_t *lift_init)
 	
 	//初始化平移位置、速度环PID
 	PID_Init(&lift_init->motor_pos_pid[2], PID_POSITION, translation_pos_pid, 60, 0);
-	PID_Init(&lift_init->motor_speed_pid[2], PID_POSITION, translation_speed_pid, 10000, 3000);
+	PID_Init(&lift_init->motor_speed_pid[2], PID_POSITION, translation_speed_pid, 20000, 3000);
 	
 	//更新一下数据
   lift_feedback_update(lift_init);
@@ -206,7 +205,7 @@ void lift_control_loop(lift_move_t *lift_control)
 						{
 							lift_control->cylinder_state.extend = 0;
 							if(Extend_State == 1)
-							lift_control->motor_lift[0].angle_set = 14.0f;
+							lift_control->motor_lift[0].angle_set = 15.0f;
 						}
 						//自动取弹 Q取3个 E取5个 F取一个
 						if((lift_control->lift_RC->key.v & Q) && (lift_control->key_time - lift_control->last_key_time >200))
@@ -283,13 +282,13 @@ void lift_control_loop(lift_move_t *lift_control)
 	}
 	
 	//平移距离限幅
-	if(lift_control->motor_lift[2].angle_set < -69.1f)
+	if(lift_control->motor_lift[2].angle_set < -70.1f)
 	{
-		lift_control->motor_lift[2].angle_set = -68.0;
+		lift_control->motor_lift[2].angle_set = -69.0;
 	}
-	else if(lift_control->motor_lift[2].angle_set > -4.99f)
+	else if(lift_control->motor_lift[2].angle_set > -2.99f)
 	{
-		lift_control->motor_lift[2].angle_set = -5.0;
+		lift_control->motor_lift[2].angle_set = -3.0;
 	}
 	
 	//高度输入
@@ -354,7 +353,7 @@ static uint8_t auto_mode = 0;
 void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, float *angle_set, float *high_angle_set)
 {
 	static uint8_t auto_times, box_times, mmp = 1;
-	static uint32_t auto_time = 0;
+//	static uint32_t auto_time = 0;
 	if(*mode == 0)//复位
 	{
 		cylinde_state->flip = 0;
@@ -377,7 +376,7 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 			}
 			else
 			{	
-				*angle_set = -68.5f;
+				*angle_set = -69.0f;
 			}
 			
 			if(*angle > 30 && *angle < 40)
@@ -389,7 +388,7 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 				}
 			}
 			
-			if(*angle > 60 && *angle < 70)
+			if(*angle > 65 && *angle < 75)
 			{
 				if(auto_times == 0)
 				{
@@ -400,16 +399,16 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 		}
 		else if(box_times == 2)
 		{
-			if(auto_mode < 4 && (*angle_set == -68.5f))
+			if(auto_mode < 4 && (*angle_set == -69.0f))
 			{
-				*angle_set = -68.5f;
+				*angle_set = -69.0f;
 			}
 			else
 			{	
-				*angle_set = -5.0f;
+				*angle_set = -3.0f;
 			}
 			
-			if(*angle > 60 && *angle < 70)
+			if(*angle > 65 && *angle < 75)
 			{
 				if(mmp == 2)
 				{
@@ -429,9 +428,9 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 		}
 		else if(box_times == 3)
 		{
-			if(auto_mode < 4 && (*angle_set == -5.0f))
+			if(auto_mode < 4 && (*angle_set == -3.0f))
 			{
-				*angle_set = -5.0f;
+				*angle_set = -3.0f;
 			}
 			else
 			{	
@@ -477,7 +476,7 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 			}
 			else
 			{	
-				*angle_set = -68.5f;
+				*angle_set = -69.0f;
 			}
 			
 			if(*angle > 30 && *angle < 40)
@@ -489,7 +488,7 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 				}
 			}
 			
-			if(*angle > 60 && *angle < 70)
+			if(*angle > 65 && *angle < 75)
 			{
 				if(auto_times == 0)
 				{
@@ -500,16 +499,16 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 		}
 		else if(box_times == 2)
 		{
-			if(auto_mode < 4 && (*angle_set == -68.5f))
+			if(auto_mode < 4 && (*angle_set == -69.0f))
 			{
-				*angle_set = -68.5f;
+				*angle_set = -69.0f;
 			}
 			else
 			{	
-				*angle_set = -5.0f;
+				*angle_set = -3.0f;
 			}
 			
-			if(*angle > 60 && *angle < 70)
+			if(*angle > 65 && *angle < 75)
 			{
 				if(mmp == 2)
 				{
@@ -529,9 +528,9 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 		}
 		else if(box_times == 3)
 		{
-			if(auto_mode < 4 && (*angle_set == -5.0f))
+			if(auto_mode < 4 && (*angle_set == -3.0f))
 			{
-				*angle_set = -5.0f;
+				*angle_set = -3.0f;
 			}
 			else
 			{	
@@ -565,7 +564,7 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 			}
 			else
 			{	
-				*angle_set = -50.5f;
+				*angle_set = -55.5f;
 			}
 			
 			if(*angle > 15 && *angle < 25)
@@ -577,7 +576,7 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 				}
 			}
 			
-			if(*angle > 45 && *angle < 55)
+			if(*angle > 50 && *angle < 60)
 			{
 				if(auto_times == 0)
 				{
@@ -600,16 +599,16 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 		else if(box_times == 5)//第5个
 		{
 			high_control = 1;
-			if(auto_mode < 4 && (*angle_set == -50.5f))
+			if(auto_mode < 4 && (*angle_set == -55.5f))
 			{
-				*angle_set = -50.5f;
+				*angle_set = -55.5f;
 			}
 			else
 			{	
 				*angle_set = -35.5f;
 			}
 			
-			if(*angle > 45 && *angle < 55)
+			if(*angle > 50 && *angle < 60)
 			{
 				if(mmp == 5)
 				{
@@ -672,7 +671,7 @@ void Auto_Auto_Auto(Cylinder_State_t *cylinde_state, uint8_t *mode)
 			cylinde_state->flip = 0;
 			cylinde_state->pinch = 0;
 			cylinde_state->bounce = 0;
-			if(!Flip_State && !Pinch_State && !Bounce_State)
+			if(Flip_Back_State && !Bounce_State)
 			{
 				auto_mode = 1;
 				auto_delay_time = 0;
@@ -684,7 +683,7 @@ void Auto_Auto_Auto(Cylinder_State_t *cylinde_state, uint8_t *mode)
 			cylinde_state->flip = 1;
 			cylinde_state->pinch = 0;
 			cylinde_state->bounce = 0;
-			if((Flip_State && !Pinch_State && !Bounce_State) || auto_delay_time >500)
+			if((Flip_For_State && !Bounce_State) || auto_delay_time > 300)
 			{
 				auto_mode = 2;
 				auto_delay_time = 0;
@@ -696,7 +695,7 @@ void Auto_Auto_Auto(Cylinder_State_t *cylinde_state, uint8_t *mode)
 			cylinde_state->flip = 1;
 			cylinde_state->pinch = 1;
 			cylinde_state->bounce = 0;
-			if((Flip_State && Pinch_State && !Bounce_State) || auto_delay_time > 100)
+			if(auto_delay_time > 100)
 			{
 				auto_mode = 3;
 				auto_delay_time = 0;
@@ -708,7 +707,7 @@ void Auto_Auto_Auto(Cylinder_State_t *cylinde_state, uint8_t *mode)
 			cylinde_state->flip = 0;
 			cylinde_state->pinch = 1;
 			cylinde_state->bounce = 0;
-			if(auto_delay_time > 150)
+			if(Flip_Back_State || auto_delay_time > 300)
 			{
 				auto_mode = 4;
 				auto_delay_time = 0;
@@ -732,7 +731,7 @@ void Auto_Auto_Auto(Cylinder_State_t *cylinde_state, uint8_t *mode)
 			cylinde_state->flip = 0;
 			cylinde_state->pinch = 0;
 			cylinde_state->bounce = 1;
-			if((!Flip_State && !Pinch_State && Bounce_State) || auto_delay_time > 100)
+			if(Bounce_State || auto_delay_time > 100)
 			{
 				auto_delay_time = 0;
 				auto_mode = 0;
@@ -743,6 +742,7 @@ void Auto_Auto_Auto(Cylinder_State_t *cylinde_state, uint8_t *mode)
 	else
 	{
 		auto_mode = 0;
+		auto_delay_time = 0;
 	}
 }
 

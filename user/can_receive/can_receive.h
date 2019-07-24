@@ -56,9 +56,11 @@ typedef struct
 //tof数据结构体
 typedef struct
 {
-	uint16_t dis_r;   //tof距离
-	uint16_t dis_l;   //tof距离
-	uint16_t str;     //tof信号强度
+	uint16_t pinch_dis_r;  //取弹tof距离
+	uint16_t pinch_dis_l;	 //取弹tof距离
+	uint16_t climb_dis_r;   //登岛tof距离
+	uint16_t climb_dis_l;   //登岛tof距离
+	uint16_t str;     		 //tof信号强度
 }tof_can_data_t;
 
 
@@ -82,4 +84,6 @@ extern const motor_measure_t *get_Lift_Motor_Measure_Point(uint8_t i);
 extern const gyro_info_t *get_GYRO_Measure_Point(void);
 //返回陀螺仪心跳包
 uint32_t get_gyro_heartbeat(void);
+//返回tof变量地址，通过指针方式获取原始数据
+const tof_can_data_t *get_tof_can_Info_Measure_Point(void);
 #endif

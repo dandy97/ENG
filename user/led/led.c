@@ -29,7 +29,7 @@ void LED_Init(void)
 }
 
 /* TIM4 init function */
-void TIM4_Init(void)//控制舵机
+ void TIM4_Init(void)//控制舵机
 {
   TIM_OC_InitTypeDef sConfigOC;
 	TIM_HandleTypeDef htim4;
@@ -41,15 +41,15 @@ void TIM4_Init(void)//控制舵机
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   HAL_TIM_PWM_Init(&htim4);
 	 
-	//1900 2620 2250
+	//1050 ~ 1800
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-	sConfigOC.Pulse = 2250;
+	sConfigOC.Pulse = 1000;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
  
-	HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_1);
+	HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_4);
 	
   HAL_TIM_PWM_MspInit(&htim4);
-	HAL_TIM_PWM_Start(&htim4,TIM_CHANNEL_1); 
+	HAL_TIM_PWM_Start(&htim4,TIM_CHANNEL_4); 
 }
 
 void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
@@ -66,7 +66,7 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
     PD15     ------> TIM4_CH4 
     */
 		__HAL_RCC_GPIOD_CLK_ENABLE();	
-    GPIO_InitStruct.Pin = GPIO_PIN_12;
+    GPIO_InitStruct.Pin = GPIO_PIN_15;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

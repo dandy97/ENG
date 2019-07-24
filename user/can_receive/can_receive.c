@@ -4,7 +4,7 @@
 //陀螺仪心跳包
 static uint32_t gyro_heartbeat = 0;
 //声明tof变量
-static tof_can_data_t tof_data;
+static tof_can_data_t tof_can_data;
 //陀螺仪变量
 static gyro_info_t gyro_info;
 //声明电机变量
@@ -70,11 +70,9 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 							
 				case 101:
 				{
-					static int16_t pitch_connt, yaw_connt = 0;
-					static int16_t raw_pit,raw_v_z,raw_yaw = 0;
-					static float pitch_angle, last_pitch_angle, yaw_angle, last_yaw_angle = 0;
-					raw_v_z = Data[2]<<8 | Data[3];
-					raw_yaw = Data[6]<<8 | Data[7];
+					static int16_t pitch_connt = 0;
+					static int16_t raw_pit = 0;
+					static float pitch_angle, last_pitch_angle = 0;
 					raw_pit = Data[4]<<8 | Data[5];
 					
 					//陀螺仪原始数据是弧度，把弧度转换为角度
@@ -82,7 +80,6 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 					
 					//陀螺仪原始数据被乘了100倍
 					pitch_angle = (float)raw_pit/100;
-					yaw_angle = (float)raw_yaw/100;
 					
 					//pit角度没有负值
 					if(pitch_angle < 0)
@@ -95,25 +92,27 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 						pitch_connt--;
 					else if((pitch_angle - last_pitch_angle) < -330)
 						pitch_connt++;
-					
-					if((yaw_angle - last_yaw_angle) > 330)
-						yaw_connt--;
-					else if((yaw_angle - last_yaw_angle) < -330)
-						yaw_connt++;
-					
+							
 					gyro_info.pit = pitch_angle + pitch_connt * 360;
 					last_pitch_angle = pitch_angle;
-					
-					gyro_info.yaw_cheap = yaw_angle + yaw_connt * 360;
-					last_yaw_angle = yaw_angle;
 					break;
 				}			
 				case 0x300:
 				{
+					//登岛tof
 					if((Data[0]<<8 | Data[1]) < 1000)
-					tof_data.dis_r = Data[0]<<8 | Data[1];
+					tof_can_data.climb_dis_l = Data[0]<<8 | Data[1];
 					if((Data[2]<<8 | Data[3]) < 1000)
-					tof_data.dis_l = Data[2]<<8 | Data[3];
+					tof_can_data.climb_dis_r = Data[2]<<8 | Data[3];
+					break;
+				}
+				case 0x301:
+				{		
+					//取弹tof
+					if((Data[0]<<8 | Data[1]) < 1000)
+					tof_can_data.pinch_dis_l = Data[0]<<8 | Data[1];
+					if((Data[2]<<8 | Data[3]) < 1000)
+					tof_can_data.pinch_dis_r = Data[2]<<8 | Data[3];
 					break;
 				}
 				case 0x401:
@@ -299,4 +298,10 @@ const gyro_info_t *get_GYRO_Measure_Point(void)
 uint32_t get_gyro_heartbeat(void)
 {
 	return gyro_heartbeat;
+}
+
+//返回tof变量地址，通过指针方式获取原始数据
+const tof_can_data_t *get_tof_can_Info_Measure_Point(void)
+{
+	return &tof_can_data;
 }
