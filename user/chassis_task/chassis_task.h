@@ -74,7 +74,14 @@
 #define M3505_MOTOR_SPEED_PID_MAX_OUT MAX_MOTOR_CAN_CURRENT
 #define M3505_MOTOR_SPEED_PID_MAX_IOUT 2000.0f
 
-//上层继电器
+//下层磁性开关
+/*前轮
+	后轮
+	*/
+#define CLIMB_FOR_STATE       HAL_GPIO_ReadPin(GPIOE,GPIO_PIN_10)
+#define CLIMB_BACK_STATE      HAL_GPIO_ReadPin(GPIOE,GPIO_PIN_11)
+
+//下层继电器
 /*前轮
 	后轮
 	弹舱
@@ -121,7 +128,12 @@ typedef struct
 	uint32_t key_time;
 	uint32_t last_press_time;
 	
-	float  vy_mouse;
+	uint8_t  auto_climb;
+	uint8_t  auto_count;
+	uint32_t last_gyro_heartbeat;
+	uint32_t gyro_heartbeat;
+	
+	float    vy_mouse;
 	float    vx;
 	float    vx_offset;
 	float    vy;

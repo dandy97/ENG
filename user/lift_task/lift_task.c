@@ -43,7 +43,7 @@ void lift_task(void *pvParameters)
 		lift_control_loop(&lift_move);
 		//发送电流值
 		CAN_CMD_LIFT(lift_move.motor_lift[0].give_current, lift_move.motor_lift[1].give_current, lift_move.motor_lift[2].give_current, 0);
-		//Ni_Ming(0xf1,lift_move.motor_lift[0].angle ,lift_move.motor_lift[2].angle_set, 0, 0);
+		//Ni_Ming(0xf1,lift_move.motor_lift[0].angle ,lift_move.motor_lift[0].angle_set, 0, 0);
 		//控制频率4ms
 		vTaskDelay(4);
 		lift_high_water = uxTaskGetStackHighWaterMark(NULL);

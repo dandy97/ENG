@@ -9,6 +9,7 @@
 #include "usart1.h"
 #include "rc.h"
 #include "tof.h"
+#include "put_out.h"
 
 #include "can_receive.h"
 #include "pid.h"
@@ -41,13 +42,13 @@ void chassis_task(void *pvParameters)
 		chassis_control_loop(&chassis_move);
 		//射击任务控制循环
 		CAN_CMD_CHASSIS(chassis_move.motor_chassis[0].give_current, chassis_move.motor_chassis[1].give_current,	chassis_move.motor_chassis[2].give_current, chassis_move.motor_chassis[3].give_current);
-		//Ni_Ming(0xf1,0, 0, chassis_move.pinch_dis_l,chassis_move.pinch_dis_r);
+		//Ni_Ming(0xf1, 0, 0, 0, chassis_move.gyro_data->yaw);
 		//底盘任务频率4ms	 
 		if((send_lift_wheel++) % 4 == 0)
 		{
 			CAN_CMD_CHASSIS_LIFT(chassis_move.motor_chassis[4].give_current, chassis_move.motor_chassis[5].give_current,0,0);
 		}
-		//printf("%d\r\n",chassis_move.chassis_RC->rc.ch[0]);
+		
 		vTaskDelay(2);
 		chassis_high_water = uxTaskGetStackHighWaterMark(NULL);
 	}
@@ -71,7 +72,6 @@ void chassis_init(chassis_move_t *chassis_init)
 	{  
 		chassis_init->motor_chassis[i].chassis_motor_measure = get_Motor_Measure_Point(i);
 	}
-	
 	//获取遥控指针 
 	chassis_init->chassis_RC = get_remote_control_point();
 	
@@ -128,6 +128,10 @@ void chassis_feedback_update(chassis_move_t *chassis_update)
 	chassis_update->pinch_dis_r = chassis_update->tof_can_measure->pinch_dis_r;
 	chassis_update->yaw = chassis_update->gyro_data->yaw;
 	
+	//获取陀螺仪心跳包
+	chassis_update->last_gyro_heartbeat = chassis_update->gyro_heartbeat;
+	chassis_update->gyro_heartbeat = get_gyro_heartbeat();
+	
 	//更新底盘状态
 	switch(chassis_update->chassis_RC->rc.s[0])
 	{
@@ -180,8 +184,18 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 		{
 			chassis_control->key_time++;//4ms一次
 			
-			/**********************************************  速度挡*******************************************************************/			
-			if(chassis_control->chassis_RC->rc.s[1] == 1)
+			/**********************************************  速度挡*******************************************************************/		
+			if(chassis_control->auto_count == 2)
+			{
+				chassis_control->vy_offset = 0;
+				chassis_control->vx_offset = 0;
+			}
+			else if(HAL_GPIO_ReadPin(CLIMB_FOR))
+			{
+				chassis_control->vy_offset = 15;
+				chassis_control->vx_offset = 0;
+			}
+			else if(chassis_control->chassis_RC->rc.s[1] == 1)
 			{
 				chassis_control->vy_offset = 30;
 				chassis_control->vx_offset = 20;
@@ -230,6 +244,58 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 				ramp_init(&LRSpeedRamp, 400);
 			}
 			
+			//自动登岛
+			if((chassis_control->chassis_RC->key.v & R) && (chassis_control->key_time - chassis_control->last_press_time >500))
+			{
+				chassis_control->last_press_time = chassis_control->key_time;
+				chassis_control->auto_climb = 1;
+			}
+			else if(chassis_control->chassis_RC->mouse.press_r == 1)//鼠标右键取消自动登岛
+			{
+				chassis_control->auto_climb = 0;
+			}
+			
+			static uint32_t lajidaima = 0;
+			if(chassis_control->auto_climb == 1)//自动登岛
+			{
+				if(chassis_control->auto_count == 0)
+				{
+					Control_Gpio(CLIMB_FOR, 1);
+					chassis_control->auto_count = 1;
+					lajidaima = 0;
+				}
+				if(chassis_move.climb_dis_l < 7.5f && chassis_move.climb_dis_r < 7.5f && CLIMB_FOR_STATE && chassis_control->auto_count == 1)
+				{
+					lajidaima++;
+					if(lajidaima > 100)
+					{
+						lajidaima = 0;
+						Control_Gpio(CLIMB_BACK, 1);
+						chassis_control->auto_count = 2;
+					}
+				}
+				else if(CLIMB_BACK_STATE && chassis_control->auto_count == 2)
+				{
+					lajidaima++;
+					Control_Gpio(CLIMB_FOR, 0);
+					if(lajidaima > 20)
+					{
+						lajidaima = 0;
+						chassis_control->auto_count = 3;
+					}
+				}
+				else if(chassis_control->auto_count == 3 && chassis_move.tof_h < 20.0f)
+				{
+					Control_Gpio(CLIMB_BACK, 0);
+					chassis_control->auto_count = 0;
+					chassis_control->auto_climb = 0;
+				}
+			}
+			else
+			{
+				chassis_control->auto_count = 0;
+			}
+			
 			//旋转
 			if(chassis_control->chassis_RC->rc.s[1] == 1)//取弹状态 不能左右旋转
 			{
@@ -248,7 +314,13 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 					}
 				}
 			}
-			else if((chassis_control->chassis_RC->key.v & CTRL) && (chassis_control->key_time - chassis_control->last_press_time >500))//转180
+			else if(HAL_GPIO_ReadPin(CLIMB_FOR))//打起前轮
+			{
+				chassis_control->vw_offset = 0;
+				chassis_control->vw_set = chassis_control->gyro_data->yaw;
+				chassis_control->gyro_angle_start = chassis_control->gyro_data->yaw;
+			}
+			else if((chassis_control->chassis_RC->key.v & CTRL) && (chassis_control->key_time - chassis_control->last_press_time >500) && (chassis_control->chassis_RC->rc.s[1] != 1))//转180
 			{
 				chassis_control->gyro_angle_start = chassis_control->gyro_data->yaw;
 				chassis_control->last_press_time = chassis_control->key_time;
@@ -302,6 +374,30 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 	PID_Calc(&chassis_control->chassis_gryo_pid, chassis_control->yaw, chassis_control->vw_set);
 	//Z轴角速度PID计算	
 	chassis_control->vw = PID_Calc(&chassis_control->chassis_acc_pid, -chassis_control->gyro_data->v_z, -chassis_control->chassis_gryo_pid.out);
+	
+	static uint32_t lost_time = 0;
+	//陀螺仪数据丢失后
+	if(chassis_control->gyro_heartbeat == chassis_control->last_gyro_heartbeat)
+	{
+		lost_time++;
+		if(lost_time > 200)
+		{
+			chassis_control->vw = 0;			
+//			if(chassis_control->vw_mouse > 0)
+//			{
+//				chassis_control->vw = 20;
+//			}
+//			else if(chassis_control->vw_mouse < 0)
+//			{
+//				chassis_control->vw = -20;
+//			}
+//			chassis_control->vw = chassis_control->vw_mouse;
+		}
+	}
+	else
+	{
+		lost_time = 0;
+	}
 	//底盘速度设定
 	chassis_control->motor_chassis[0].speed_set = +(int16_t)chassis_control->vx - (int16_t)chassis_control->vy + (int16_t)chassis_control->vw;
 	chassis_control->motor_chassis[1].speed_set = +(int16_t)chassis_control->vx + (int16_t)chassis_control->vy + (int16_t)chassis_control->vw;
@@ -332,7 +428,7 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 		 chassis_control->vy_mouse = 750;
 	}
 	else if(chassis_control->vy_mouse < 0)
-		{
+	{
 		 chassis_control->vy_mouse = 0;
 	}
 		//printf("%f\r\n",chassis_control->vy_mouse);

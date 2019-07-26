@@ -53,4 +53,5 @@ rm_frtos\chassis_task.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_
 rm_frtos\chassis_task.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
 rm_frtos\chassis_task.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
 rm_frtos\chassis_task.o: ..\user\usart1\usart1.h
+rm_frtos\chassis_task.o: ..\user\put_out\put_out.h
 rm_frtos\chassis_task.o: ..\user\ramp\ramp.h

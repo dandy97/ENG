@@ -28,7 +28,7 @@ int fputc(int ch, FILE *f)
 UART_HandleTypeDef huart1;
 
 DMA_HandleTypeDef  UART2RxDMA_Handler;
-DMA_HandleTypeDef  UART4RxDMA_Handler;
+DMA_HandleTypeDef  UART6RxDMA_Handler;
 
 //串口调试
 void USART1_Init(void)
@@ -92,37 +92,36 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
 		HAL_NVIC_SetPriority(USART2_IRQn, 5, 0);
 		HAL_NVIC_EnableIRQ(USART2_IRQn);				//使能USART2中断通道
 	}
-	else if(uartHandle->Instance==UART4)
+	else if(uartHandle->Instance==USART6)
   {
-    __HAL_RCC_UART4_CLK_ENABLE(); 
-		__HAL_RCC_DMA1_CLK_ENABLE();
-		__HAL_RCC_GPIOA_CLK_ENABLE();
-   /* PA0     ------> UART4_TX
-      PA1     ------> UART4_RX */  
-    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
+    __HAL_RCC_USART6_CLK_ENABLE();   
+		__HAL_RCC_DMA2_CLK_ENABLE();	
+		__HAL_RCC_GPIOC_CLK_ENABLE();
+    /* PC6     ------> USART6_TX
+       PC7     ------> USART6_RX */  
+    GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF8_UART4;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF8_USART6;
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 		
-		//RX
-		UART4RxDMA_Handler.Instance=DMA1_Stream2;                           
-    UART4RxDMA_Handler.Init.Channel=DMA_CHANNEL_4;   									
-    UART4RxDMA_Handler.Init.Direction = DMA_PERIPH_TO_MEMORY;
-    UART4RxDMA_Handler.Init.PeriphInc = DMA_PINC_DISABLE;
-    UART4RxDMA_Handler.Init.MemInc = DMA_MINC_ENABLE;
-    UART4RxDMA_Handler.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-    UART4RxDMA_Handler.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-    UART4RxDMA_Handler.Init.Mode = DMA_CIRCULAR;
-    UART4RxDMA_Handler.Init.Priority = DMA_PRIORITY_LOW;
-    UART4RxDMA_Handler.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-    HAL_DMA_Init(&UART4RxDMA_Handler);           
+		UART6RxDMA_Handler.Instance=DMA2_Stream1;                           
+    UART6RxDMA_Handler.Init.Channel=DMA_CHANNEL_5;   									
+    UART6RxDMA_Handler.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    UART6RxDMA_Handler.Init.PeriphInc = DMA_PINC_DISABLE;
+    UART6RxDMA_Handler.Init.MemInc = DMA_MINC_ENABLE;
+    UART6RxDMA_Handler.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+    UART6RxDMA_Handler.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+    UART6RxDMA_Handler.Init.Mode = DMA_CIRCULAR;
+    UART6RxDMA_Handler.Init.Priority = DMA_PRIORITY_LOW;
+    UART6RxDMA_Handler.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+    HAL_DMA_Init(&UART6RxDMA_Handler);           
 		
-		__HAL_LINKDMA(uartHandle,hdmarx,UART4RxDMA_Handler);    
+		__HAL_LINKDMA(uartHandle,hdmarx,UART6RxDMA_Handler);
 		
-		HAL_NVIC_SetPriority(UART4_IRQn, 5, 0);
-		HAL_NVIC_EnableIRQ(UART4_IRQn);
+		HAL_NVIC_EnableIRQ(USART6_IRQn);
+		HAL_NVIC_SetPriority(USART6_IRQn, 5, 0);	
   }
 }
 
