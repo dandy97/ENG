@@ -44,6 +44,7 @@ void lift_task(void *pvParameters)
 		//发送电流值
 		CAN_CMD_LIFT(lift_move.motor_lift[0].give_current, lift_move.motor_lift[1].give_current, lift_move.motor_lift[2].give_current, 0);
 		//Ni_Ming(0xf1,lift_move.motor_lift[0].angle ,lift_move.motor_lift[0].angle_set, 0, 0);
+		//printf("%d %d\r\n",Flip_For_State, Flip_Back_State);
 		//控制频率4ms
 		vTaskDelay(4);
 		lift_high_water = uxTaskGetStackHighWaterMark(NULL);
@@ -204,7 +205,7 @@ void lift_control_loop(lift_move_t *lift_control)
 						else if(high_control == 0)
 						{
 							lift_control->cylinder_state.extend = 0;
-							if(Extend_State == 1)
+							if(Extend_State == 1)/******************************/
 							lift_control->motor_lift[0].angle_set = 15.0f;
 						}
 						//自动取弹 Q取3个 E取5个 F取一个
@@ -671,7 +672,7 @@ void Auto_Auto_Auto(Cylinder_State_t *cylinde_state, uint8_t *mode)
 			cylinde_state->flip = 0;
 			cylinde_state->pinch = 0;
 			cylinde_state->bounce = 0;
-			if(Flip_Back_State && !Bounce_State)
+			if((Flip_Back_State && !Bounce_State) || auto_delay_time > 100)
 			{
 				auto_mode = 1;
 				auto_delay_time = 0;
@@ -719,7 +720,7 @@ void Auto_Auto_Auto(Cylinder_State_t *cylinde_state, uint8_t *mode)
 			cylinde_state->flip = 0;
 			cylinde_state->pinch = 1;
 			cylinde_state->bounce = 0;
-			if(auto_delay_time > 100)
+			if(auto_delay_time > 50)
 			{
 				auto_mode = 5;
 				auto_delay_time = 0;

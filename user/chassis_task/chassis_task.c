@@ -42,11 +42,13 @@ void chassis_task(void *pvParameters)
 		chassis_control_loop(&chassis_move);
 		//射击任务控制循环
 		CAN_CMD_CHASSIS(chassis_move.motor_chassis[0].give_current, chassis_move.motor_chassis[1].give_current,	chassis_move.motor_chassis[2].give_current, chassis_move.motor_chassis[3].give_current);
-		//Ni_Ming(0xf1, 0, 0, 0, chassis_move.gyro_data->yaw);
+		
 		//底盘任务频率4ms	 
 		if((send_lift_wheel++) % 4 == 0)
 		{
 			CAN_CMD_CHASSIS_LIFT(chassis_move.motor_chassis[4].give_current, chassis_move.motor_chassis[5].give_current,0,0);
+			//Ni_Ming(0xf1, chassis_move.pinch_dis_l, chassis_move.pinch_dis_r, chassis_move.climb_dis_r, chassis_move.climb_dis_l);
+			//printf("%d %d\r\n",CLIMB_FOR_STATE, CLIMB_BACK_STATE);
 		}
 		
 		vTaskDelay(2);
@@ -244,15 +246,18 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 				ramp_init(&LRSpeedRamp, 400);
 			}
 			
-			//自动登岛
-			if((chassis_control->chassis_RC->key.v & R) && (chassis_control->key_time - chassis_control->last_press_time >500))
+			if(chassis_control->chassis_RC->rc.s[1] == 3)
 			{
-				chassis_control->last_press_time = chassis_control->key_time;
-				chassis_control->auto_climb = 1;
-			}
-			else if(chassis_control->chassis_RC->mouse.press_r == 1)//鼠标右键取消自动登岛
-			{
-				chassis_control->auto_climb = 0;
+				//自动登岛
+				if((chassis_control->chassis_RC->key.v & R) && (chassis_control->key_time - chassis_control->last_press_time >500))
+				{
+					chassis_control->last_press_time = chassis_control->key_time;
+					chassis_control->auto_climb = 1;
+				}
+				else if(chassis_control->chassis_RC->mouse.press_r == 1)//鼠标右键取消自动登岛
+				{
+					chassis_control->auto_climb = 0;
+				}
 			}
 			
 			static uint32_t lajidaima = 0;

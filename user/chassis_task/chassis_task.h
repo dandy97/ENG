@@ -78,8 +78,8 @@
 /*前轮
 	后轮
 	*/
-#define CLIMB_FOR_STATE       HAL_GPIO_ReadPin(GPIOE,GPIO_PIN_10)
-#define CLIMB_BACK_STATE      HAL_GPIO_ReadPin(GPIOE,GPIO_PIN_11)
+#define CLIMB_FOR_STATE       HAL_GPIO_ReadPin(GPIOE,GPIO_PIN_12)
+#define CLIMB_BACK_STATE      HAL_GPIO_ReadPin(GPIOE,GPIO_PIN_13)
 
 //下层继电器
 /*前轮

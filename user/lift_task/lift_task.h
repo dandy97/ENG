@@ -31,9 +31,15 @@
 	ÉìËõ
 	*/
 #define Bounce_State        HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_2)
-#define Flip_Back_State			HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_3)
-#define Flip_For_State    	HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_2)
+#define Flip_For_State			HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_3)
+#define Flip_Back_State    	HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_2)
 #define Extend_State        HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_3)
+
+#define One_Angle						0
+#define Two_Angle						0
+#define Three_Angle					0
+#define Four_Angle					0
+#define Five_Angle					0
 
 /*
 	Æø¸×¿ØÖÆ
