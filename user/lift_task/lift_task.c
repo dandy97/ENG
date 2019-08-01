@@ -247,6 +247,7 @@ void lift_control_loop(lift_move_t *lift_control)
 				}
 				else if(lift_control->lift_RC->rc.s[1] == 3)//遥控左边中间档位
 				{
+						lift_control->auto_mode = 0;//++++
 						high_control = 0;
 						if(lift_control->motor_lift[2].angle > 30 && lift_control->motor_lift[2].angle < 40 && Extend_State)lift_control->motor_lift[0].angle_set = 1.0f;
 						lift_control->motor_lift[2].angle_set = -35.5f;
@@ -371,16 +372,16 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 	{
 		if(box_times == 1)
 		{
-			if(auto_mode < 4 && (*angle_set == -35.5f))
+			if(auto_mode < 4 && (*angle_set == -One_Angle))
 			{
-				*angle_set = -35.5f;
+				*angle_set = -One_Angle;
 			}
 			else
 			{	
-				*angle_set = -69.0f;
+				*angle_set = -Two_Angle;
 			}
 			
-			if(*angle > 30 && *angle < 40)
+			if(*angle > (One_Angle - 5.5f) && *angle < (One_Angle + 5.5f))
 			{
 				if(mmp == 1)
 				{
@@ -389,7 +390,7 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 				}
 			}
 			
-			if(*angle > 65 && *angle < 75)
+			if(*angle > (Two_Angle - 5.5f) && *angle < (Two_Angle + 5.5f))
 			{
 				if(auto_times == 0)
 				{
@@ -400,16 +401,16 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 		}
 		else if(box_times == 2)
 		{
-			if(auto_mode < 4 && (*angle_set == -69.0f))
+			if(auto_mode < 4 && (*angle_set == -Two_Angle))
 			{
-				*angle_set = -69.0f;
+				*angle_set = -Two_Angle;
 			}
 			else
 			{	
-				*angle_set = -3.0f;
+				*angle_set = -Three_Angle;
 			}
 			
-			if(*angle > 65 && *angle < 75)
+			if(*angle > (Two_Angle - 5.5f) && *angle < (Two_Angle + 5.5f))
 			{
 				if(mmp == 2)
 				{
@@ -418,7 +419,7 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 				}
 			}
 			
-			if(*angle > 0 && *angle < 10)
+			if(*angle > (Three_Angle - 5.5f) && *angle < (Three_Angle + 5.5f))
 			{
 				if(auto_times == 0)
 				{
@@ -429,16 +430,16 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 		}
 		else if(box_times == 3)
 		{
-			if(auto_mode < 4 && (*angle_set == -3.0f))
+			if(auto_mode < 4 && (*angle_set == -Three_Angle))
 			{
-				*angle_set = -3.0f;
+				*angle_set = -Three_Angle;
 			}
 			else
 			{	
 				*angle_set = -35.5f;
 			}
 			
-			if(*angle > 0 && *angle < 10)
+			if(*angle > (Three_Angle - 5.5f) && *angle < (Three_Angle + 5.5f))
 			{
 				if(mmp == 3)
 				{
@@ -471,16 +472,16 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 	{
 		if(box_times == 1)
 		{
-			if(auto_mode < 4 && (*angle_set == -35.5f))
+			if(auto_mode < 4 && (*angle_set == -One_Angle))
 			{
-				*angle_set = -35.5f;
+				*angle_set = -One_Angle;
 			}
 			else
 			{	
-				*angle_set = -69.0f;
+				*angle_set = -Two_Angle;
 			}
 			
-			if(*angle > 30 && *angle < 40)
+			if(*angle > (One_Angle - 5.5f) && *angle < (One_Angle + 5.5f))
 			{
 				if(mmp == 1)
 				{
@@ -489,7 +490,7 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 				}
 			}
 			
-			if(*angle > 65 && *angle < 75)
+			if(*angle > (Two_Angle - 5.5f) && *angle < (Two_Angle + 5.5f))
 			{
 				if(auto_times == 0)
 				{
@@ -500,16 +501,16 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 		}
 		else if(box_times == 2)
 		{
-			if(auto_mode < 4 && (*angle_set == -69.0f))
+			if(auto_mode < 4 && (*angle_set == -Two_Angle))
 			{
-				*angle_set = -69.0f;
+				*angle_set = -Two_Angle;
 			}
 			else
 			{	
-				*angle_set = -3.0f;
+				*angle_set = -Three_Angle;
 			}
 			
-			if(*angle > 65 && *angle < 75)
+			if(*angle > (Two_Angle - 5.5f) && *angle < (Two_Angle + 5.5f))
 			{
 				if(mmp == 2)
 				{
@@ -518,7 +519,7 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 				}
 			}
 			
-			if(*angle > 0 && *angle < 10)
+			if(*angle > (Three_Angle - 5.5f) && *angle < (Three_Angle + 5.5f))
 			{
 				if(auto_times == 0)
 				{
@@ -529,16 +530,16 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 		}
 		else if(box_times == 3)
 		{
-			if(auto_mode < 4 && (*angle_set == -3.0f))
+			if(auto_mode < 4 && (*angle_set == -Three_Angle))
 			{
-				*angle_set = -3.0f;
+				*angle_set = -Three_Angle;
 			}
 			else
 			{	
-				*angle_set = -20.5f;
+				*angle_set = -Four_Angle;
 			}
 			
-			if(*angle > 0 && *angle < 10)
+			if(*angle > (Three_Angle - 5.5f) && *angle < (Three_Angle + 5.5f))
 			{
 				if(mmp == 3)
 				{
@@ -547,7 +548,7 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 				}
 			}
 			
-			if(*angle > 15 && *angle < 25)
+			if(*angle > (Four_Angle - 5.5f) && *angle < (Four_Angle + 5.5f))
 			{
 				if(auto_times == 0)
 				{
@@ -559,16 +560,16 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 		else if(box_times == 4)//第4个
 		{
 			high_control = 1;
-			if(auto_mode < 4 && (*angle_set == -20.5f))
+			if(auto_mode < 4 && (*angle_set == -Four_Angle))
 			{
-				*angle_set = -20.5f;
+				*angle_set = -Four_Angle;
 			}
 			else
 			{	
-				*angle_set = -55.5f;
+				*angle_set = -Five_Angle;
 			}
 			
-			if(*angle > 15 && *angle < 25)
+			if(*angle > (Four_Angle - 5.5f) && *angle < (Four_Angle + 5.5f))
 			{
 				if(mmp == 4)
 				{
@@ -577,7 +578,7 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 				}
 			}
 			
-			if(*angle > 50 && *angle < 60)
+			if(*angle > (Five_Angle - 5.5f) && *angle < (Five_Angle + 5.5f))
 			{
 				if(auto_times == 0)
 				{
@@ -600,16 +601,16 @@ void Auto_Mvp(Cylinder_State_t *cylinde_state, uint8_t *mode, float *angle, floa
 		else if(box_times == 5)//第5个
 		{
 			high_control = 1;
-			if(auto_mode < 4 && (*angle_set == -55.5f))
+			if(auto_mode < 4 && (*angle_set == -Five_Angle))
 			{
-				*angle_set = -55.5f;
+				*angle_set = -Five_Angle;
 			}
 			else
 			{	
 				*angle_set = -35.5f;
 			}
 			
-			if(*angle > 50 && *angle < 60)
+			if(*angle > (Five_Angle - 5.5f) && *angle < (Five_Angle + 5.5f))
 			{
 				if(mmp == 5)
 				{

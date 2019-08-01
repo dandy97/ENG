@@ -122,7 +122,7 @@ void chassis_feedback_update(chassis_move_t *chassis_update)
 	chassis_update->motor_chassis[4].speed = chassis_update->motor_chassis[4].chassis_motor_measure->filter_rate / 19.0f;
 	chassis_update->motor_chassis[5].speed = chassis_update->motor_chassis[5].chassis_motor_measure->filter_rate / 19.0f;
 	chassis_update->vw_mouse = chassis_update->chassis_RC->mouse.x;
-	chassis_update->vy_mouse += chassis_update->chassis_RC->mouse.y * 0.05f;
+	chassis_update->vy_mouse += chassis_update->chassis_RC->mouse.y * 0.03f;
 	chassis_update->tof_h = chassis_update->tof_measure->tof_h;
 	chassis_update->climb_dis_l = chassis_update->tof_can_measure->climb_dis_l;
 	chassis_update->climb_dis_r = chassis_update->tof_can_measure->climb_dis_r;
@@ -335,7 +335,7 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 			{
 				if(chassis_control->vw_mouse >  60)chassis_control->vw_mouse = 60; 
 				if(chassis_control->vw_mouse < -60)chassis_control->vw_mouse = -60;			
-				chassis_control->vw_offset -= chassis_control->vw_mouse * 0.003;
+				chassis_control->vw_offset -= chassis_control->vw_mouse * 0.007;
 				chassis_control->vw_set = chassis_control->vw_offset + chassis_control->gyro_angle_start;
 			}
 			

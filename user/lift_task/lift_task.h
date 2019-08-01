@@ -35,11 +35,11 @@
 #define Flip_Back_State    	HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_2)
 #define Extend_State        HAL_GPIO_ReadPin(GPIOC,GPIO_PIN_3)
 
-#define One_Angle						0
-#define Two_Angle						0
-#define Three_Angle					0
-#define Four_Angle					0
-#define Five_Angle					0
+#define One_Angle						35.5f
+#define Two_Angle						69.0f
+#define Three_Angle					3.0f
+#define Four_Angle					20.5f
+#define Five_Angle					55.5f
 
 /*
 	Æø¸×¿ØÖÆ
