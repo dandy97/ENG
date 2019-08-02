@@ -327,7 +327,7 @@ void chassis_control_loop(chassis_move_t *chassis_control)
 			}
 			else if((chassis_control->chassis_RC->key.v & CTRL) && (chassis_control->key_time - chassis_control->last_press_time >500) && (chassis_control->chassis_RC->rc.s[1] != 1))//ת180
 			{
-				chassis_control->gyro_angle_start = chassis_control->gyro_data->yaw;
+				//chassis_control->gyro_angle_start = chassis_control->gyro_data->yaw;
 				chassis_control->last_press_time = chassis_control->key_time;
 				chassis_control->vw_offset += 180;//ת180
 			}

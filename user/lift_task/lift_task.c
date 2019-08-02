@@ -93,7 +93,7 @@ void lift_init(lift_move_t *lift_init)
 	}
 	
 	//初始化平移位置、速度环PID
-	PID_Init(&lift_init->motor_pos_pid[2], PID_POSITION, translation_pos_pid, 60, 0);
+	PID_Init(&lift_init->motor_pos_pid[2], PID_POSITION, translation_pos_pid, 90, 0);
 	PID_Init(&lift_init->motor_speed_pid[2], PID_POSITION, translation_speed_pid, 20000, 3000);
 	
 	//更新一下数据
@@ -733,7 +733,7 @@ void Auto_Auto_Auto(Cylinder_State_t *cylinde_state, uint8_t *mode)
 			cylinde_state->flip = 0;
 			cylinde_state->pinch = 0;
 			cylinde_state->bounce = 1;
-			if(Bounce_State || auto_delay_time > 100)
+			if(Bounce_State || auto_delay_time > 150)
 			{
 				auto_delay_time = 0;
 				auto_mode = 0;
